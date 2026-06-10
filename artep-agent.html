@@ -3,344 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARTEP — Agent de coordination Phase 1</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>ARTEP — Agent Phase 1</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@300;400;500&family=DM+Mono&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --blue:   #24364D;
-  --blue2:  #6F8FB5;
-  --copper: #C4620A;
-  --petrol: #1F4D4F;
-  --text:   #1F2937;
-  --bg:     #FFFFFF;
-  --panel:  #F6F8FB;
-  --border: #E5E7EB;
-  --muted:  #6B7280;
-}
-
-body {
-  font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
-  background: var(--panel);
-  color: var(--text);
-  min-height: 100vh;
-}
-
-/* ── HEADER ── */
-.header {
-  background: var(--blue);
-  border-bottom: 3px solid var(--copper);
-  padding: 16px 24px;
-}
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.brand-text {
-  border-left: 1px solid rgba(255,255,255,0.2);
-  padding-left: 14px;
-}
-.brand-text .title { color: #fff; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; }
-.brand-text .sub   { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
-
-.stats { display: flex; gap: 8px; flex-wrap: wrap; }
-.stat-box {
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
-  padding: 6px 14px;
-  text-align: center;
-  min-width: 70px;
-}
-.stat-box .val { font-weight: 700; font-size: 20px; }
-.stat-box .lbl { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-
-/* ── LAYOUT ── */
-.layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.layout.with-panel {
-  grid-template-columns: 1fr 1fr;
-}
-
-/* ── TASK LIST ── */
-.tasklist { padding: 20px; }
-
-.btn-run-all {
-  width: 100%;
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 13px 20px;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  margin-bottom: 16px;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 0.15s;
-}
-.btn-run-all:hover { background: var(--copper); }
-.btn-run-all:disabled { background: var(--muted); cursor: default; }
-
-.alert-review {
-  background: #FEF3E8;
-  border: 1px solid var(--copper);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  font-size: 12px;
-  color: var(--copper);
-  font-weight: 600;
-  display: none;
-}
-
-.cat-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-  padding-left: 2px;
-}
-
-.cat-group { margin-bottom: 24px; }
-.tasks { display: flex; flex-direction: column; gap: 8px; }
-
-.task-card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  cursor: default;
-  transition: border-color 0.15s;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-.task-card.clickable { cursor: pointer; }
-.task-card.clickable:hover { border-color: var(--blue2); }
-.task-card.selected { border-color: var(--blue); background: #EEF3F8; }
-
-.task-left { display: flex; align-items: flex-start; gap: 10px; }
-.task-icon { font-size: 20px; flex-shrink: 0; }
-.task-title { font-weight: 700; font-size: 13px; color: var(--blue); margin-bottom: 3px; }
-.task-desc  { font-size: 11px; color: var(--muted); }
-
-.task-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.btn-generate {
-  background: var(--copper);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  letter-spacing: 0.04em;
-  transition: background 0.12s;
-}
-.btn-generate:hover { background: #a35008; }
-
-.btn-regen {
-  background: var(--blue2);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-}
-
-/* Progress */
-.progress-box {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-top: 8px;
-}
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 11px;
-}
-.progress-header .prog-label { font-weight: 700; color: var(--blue); }
-.progress-header .prog-count { color: var(--muted); }
-.progress-bar-bg {
-  background: var(--border);
-  border-radius: 999px;
-  height: 6px;
-}
-.progress-bar-fill {
-  background: var(--petrol);
-  border-radius: 999px;
-  height: 6px;
-  transition: width 0.4s;
-}
-
-/* ── REVIEW PANEL ── */
-.review-panel {
-  border-left: 1px solid var(--border);
-  background: #fff;
-  padding: 20px;
-  display: none;
-  flex-direction: column;
-  min-height: 500px;
-}
-.review-panel.visible { display: flex; }
-
-.review-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.review-sublabel {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.review-title { font-weight: 700; font-size: 14px; color: var(--blue); }
-.btn-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-}
-
-.review-textarea {
-  flex: 1;
-  width: 100%;
-  min-height: 320px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--text);
-  font-family: 'DM Mono', monospace;
-  resize: vertical;
-  outline: none;
-}
-.review-textarea:focus { border-color: var(--blue2); }
-
-.review-actions {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.btn-approve {
-  flex: 1;
-  background: var(--petrol);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 11px 16px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  transition: background 0.12s;
-}
-.btn-approve:hover { background: #163535; }
-.btn-copy {
-  flex: 1;
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 11px 16px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  transition: background 0.12s;
-}
-.btn-copy:hover { background: var(--copper); }
-.btn-reject {
-  background: #FEF2F2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
-  border-radius: 10px;
-  padding: 11px 14px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-}
-.review-hint {
-  margin-top: 10px;
-  font-size: 10px;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* Spinner */
-.spinner {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#24364D;--blue2:#6F8FB5;--copper:#C4620A;--petrol:#1F4D4F;--text:#1F2937;--panel:#F6F8FB;--border:#E5E7EB;--muted:#6B7280}
+body{font-family:'Montserrat','Inter',system-ui,sans-serif;background:var(--panel);color:var(--text);min-height:100vh}
+.header{background:var(--blue);border-bottom:3px solid var(--copper);padding:16px 24px}
+.header-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;max-width:1200px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-text .title{color:#fff;font-weight:700;font-size:13px;letter-spacing:.05em}
+.brand-text .sub{color:rgba(255,255,255,.5);font-size:11px;margin-top:2px}
+.brand-text{border-left:1px solid rgba(255,255,255,.2);padding-left:14px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat-box{background:rgba(255,255,255,.08);border-radius:8px;padding:6px 14px;text-align:center;min-width:70px}
+.stat-box .val{font-weight:700;font-size:20px}
+.stat-box .lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.layout{display:grid;grid-template-columns:1fr;max-width:1200px;margin:0 auto}
+.layout.with-panel{grid-template-columns:1fr 1fr}
+.tasklist{padding:20px}
+.cat-label{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-left:2px}
+.cat-group{margin-bottom:24px}
+.tasks{display:flex;flex-direction:column;gap:8px}
+.task-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:default;transition:border-color .15s}
+.task-card.clickable{cursor:pointer}
+.task-card.clickable:hover{border-color:var(--blue2)}
+.task-card.selected{border-color:var(--blue);background:#EEF3F8}
+.task-left{display:flex;align-items:flex-start;gap:10px}
+.task-icon{font-size:20px;flex-shrink:0}
+.task-title{font-weight:700;font-size:13px;color:var(--blue);margin-bottom:3px}
+.task-desc{font-size:11px;color:var(--muted)}
+.task-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.progress-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px}
+.prog-label{font-weight:700;color:var(--blue)}
+.prog-count{color:var(--muted)}
+.progress-bar-bg{background:var(--border);border-radius:999px;height:6px}
+.progress-bar-fill{background:var(--petrol);border-radius:999px;height:6px;transition:width .4s}
+.reset-btn{margin-top:12px;text-align:center}
+.reset-btn button{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:10px;color:var(--muted);cursor:pointer;font-family:Montserrat,sans-serif}
+.review-panel{border-left:1px solid var(--border);background:#fff;padding:20px;display:none;flex-direction:column;min-height:500px}
+.review-panel.visible{display:flex}
+.review-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.review-sublabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.review-title{font-weight:700;font-size:14px;color:var(--blue)}
+.btn-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+.review-textarea{flex:1;width:100%;min-height:320px;border:1px solid var(--border);border-radius:10px;padding:14px;font-size:12px;line-height:1.7;color:var(--text);font-family:'DM Mono',monospace;resize:vertical;outline:none}
+.review-textarea:focus{border-color:var(--blue2)}
+.review-actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+.btn-approve{flex:1;background:var(--petrol);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:Montserrat,sans-serif}
+.btn-copy{flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:Montserrat,sans-serif}
+.btn-reject{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:10px;padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:Montserrat,sans-serif}
+.review-hint{margin-top:10px;font-size:10px;color:var(--muted);text-align:center}
+.info-banner{background:#EEF3F8;border:1px solid var(--blue2);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--blue);font-weight:600}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
 <div class="header">
   <div class="header-inner">
     <div class="brand">
-      <!-- Logo ARTEP SVG inline (fond clair → cls-1 = #24364D) -->
       <svg viewBox="0 0 450 116" width="130" style="display:block;flex-shrink:0">
         <polygon fill="#24364D" points="66.3 63.61 86.5 96.38 114.55 96.38 61.81 4.58 80.44 4.58 140.82 111.42 39.58 111.42 66.3 63.61"/>
         <polygon fill="#C4620A" points="66.28 63.61 57.3 48.35 21.84 111.42 4.78 111.42 56.63 17.15 74.39 50.59 66.28 63.61"/>
@@ -351,199 +73,610 @@ body {
         <path fill="#24364D" d="M442.55,23.5c-1.78-2.77-4.35-4.91-7.7-6.4-3.35-1.49-7.27-2.23-11.79-2.23h-21.42v8.18h20.97c4.21,0,7.41.89,9.59,2.67,2.18,1.78,3.27,4.34,3.27,7.66s-1.09,5.87-3.27,7.66c-2.18,1.78-5.38,2.68-9.59,2.68h-20.97v23.2h9.67v-15.02h11.75c4.51,0,8.44-.74,11.79-2.23,3.35-1.49,5.91-3.63,7.7-6.43,1.78-2.8,2.68-6.09,2.68-9.85s-.89-7.11-2.68-9.89Z"/>
         <g fill="#C4620A">
           <path d="M170.31,85.62c1.12,0,2.14.26,3.08.78.94.52,1.69,1.23,2.25,2.13l3.04-1.47c-.81-1.42-1.96-2.55-3.44-3.38-1.48-.83-3.12-1.24-4.93-1.24s-3.45.41-4.93,1.21c-1.48.81-2.64,1.94-3.5,3.39s-1.28,3.08-1.28,4.89.43,3.44,1.28,4.89,2.02,2.58,3.5,3.39c1.48.81,3.12,1.21,4.93,1.21s3.45-.41,4.93-1.23c1.48-.82,2.63-1.95,3.44-3.39l-3.04-1.47c-.56.91-1.31,1.62-2.25,2.14-.94.52-1.96.78-3.08.78-1.76,0-3.26-.6-4.48-1.82-1.22-1.21-1.84-2.72-1.84-4.51s.61-3.3,1.84-4.51c1.22-1.21,2.72-1.81,4.48-1.81Z"/>
-          <path d="M191.53,82.44c-1.48-.81-3.12-1.21-4.92-1.21s-3.45.41-4.93,1.21c-1.48.81-2.64,1.94-3.5,3.39s-1.28,3.08-1.28,4.89.43,3.44,1.28,4.89,2.02,2.58,3.5,3.39c1.48.81,3.12,1.21,4.93,1.21s3.44-.41,4.92-1.21c1.48-.81,2.65-1.94,3.51-3.39.86-1.45,1.29-3.08,1.29-4.89s-.43-3.44-1.29-4.89c-.86-1.45-2.03-2.58-3.51-3.39Z"/>
+          <path d="M396.78,82.63l-6.04,18.6h3.5l1.11-3.42h8.08l1.11,3.42h3.5l-6.06-18.6h-5.22ZM396.26,95.05l3.13-9.61,3.14,9.61h-6.26Z"/>
         </g>
       </svg>
       <div class="brand-text">
         <div class="title">Agent de coordination</div>
-        <div class="sub">Phase 1 — Automatisation réseaux sociaux</div>
+        <div class="sub">Phase 1 — 12 livrables opérationnels</div>
       </div>
     </div>
     <div class="stats">
-      <div class="stat-box">
-        <div class="val" id="count-pending" style="color:#9CA3AF">0</div>
-        <div class="lbl">En attente</div>
-      </div>
-      <div class="stat-box">
-        <div class="val" id="count-review" style="color:#C4620A">0</div>
-        <div class="lbl">À valider</div>
-      </div>
-      <div class="stat-box">
-        <div class="val" id="count-approved" style="color:#6EE7B7">0</div>
-        <div class="lbl">Validés</div>
-      </div>
+      <div class="stat-box"><div class="val" id="count-pending" style="color:#9CA3AF">0</div><div class="lbl">En attente</div></div>
+      <div class="stat-box"><div class="val" id="count-review" style="color:#C4620A">0</div><div class="lbl">À valider</div></div>
+      <div class="stat-box"><div class="val" id="count-approved" style="color:#6EE7B7">0</div><div class="lbl">Validés</div></div>
     </div>
   </div>
 </div>
 
-<!-- LAYOUT -->
 <div class="layout" id="layout">
   <div class="tasklist">
-    <button class="btn-run-all" id="btn-run-all" onclick="runAll()">
-      ▶ Générer tous les livrables
-    </button>
-    <div class="alert-review" id="alert-review"></div>
-
-    <!-- PROMPTS -->
-    <div class="cat-group">
-      <div class="cat-label">Prompts</div>
-      <div class="tasks" id="cat-Prompts"></div>
-    </div>
-    <!-- ARCHITECTURE -->
-    <div class="cat-group">
-      <div class="cat-label">Architecture</div>
-      <div class="tasks" id="cat-Architecture"></div>
-    </div>
-    <!-- CANVA -->
-    <div class="cat-group">
-      <div class="cat-label">Canva</div>
-      <div class="tasks" id="cat-Canva"></div>
-    </div>
-
-    <!-- PROGRESS -->
+    <div class="info-banner">✅ 12 livrables prêts — clique sur chaque tâche pour lire, modifier et valider</div>
+    <div class="cat-group"><div class="cat-label">Prompts</div><div class="tasks" id="cat-Prompts"></div></div>
+    <div class="cat-group"><div class="cat-label">Architecture</div><div class="tasks" id="cat-Architecture"></div></div>
+    <div class="cat-group"><div class="cat-label">Canva</div><div class="tasks" id="cat-Canva"></div></div>
     <div class="progress-box">
-      <div class="progress-header">
-        <span class="prog-label">Progression Phase 1</span>
-        <span class="prog-count" id="prog-count">0 / 12 livrables</span>
-      </div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
-      </div>
+      <div class="progress-header"><span class="prog-label">Progression Phase 1</span><span class="prog-count" id="prog-count">0 / 12</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:0%"></div></div>
     </div>
+    <div class="reset-btn"><button onclick="resetAll()">🔄 Réinitialiser</button></div>
   </div>
-
-  <!-- REVIEW PANEL -->
   <div class="review-panel" id="review-panel">
     <div class="review-header">
-      <div>
-        <div class="review-sublabel">Validation requise</div>
-        <div class="review-title" id="review-title"></div>
-      </div>
+      <div><div class="review-sublabel">Validation requise</div><div class="review-title" id="review-title"></div></div>
       <button class="btn-close" onclick="closePanel()">✕</button>
     </div>
-    <textarea class="review-textarea" id="review-textarea" placeholder="Contenu généré..."></textarea>
+    <textarea class="review-textarea" id="review-textarea"></textarea>
     <div class="review-actions">
       <button class="btn-approve" onclick="approveSelected()">✓ Valider</button>
-      <button class="btn-copy"    onclick="copySelected()">📋 Copier</button>
-      <button class="btn-reject"  onclick="rejectSelected()">✕ Refuser</button>
+      <button class="btn-copy" onclick="copySelected()">📋 Copier</button>
+      <button class="btn-reject" onclick="rejectSelected()">✕ Refuser</button>
     </div>
     <div class="review-hint">Tu peux modifier le texte avant de valider</div>
   </div>
 </div>
 
 <script>
-// ── TASKS DATA ──────────────────────────────────────────────────────────────
 const TASKS = [
-  { id:"t1", category:"Prompts", icon:"💬", title:"Prompt P0 — Classification commentaire", desc:"Génère le prompt de classification commentaire simple / sensible pour Make.",
-    prompt:`Tu es un expert en automatisation Instagram pour une entreprise de courtage en travaux en Île-de-France. Génère le prompt opérationnel P0 de classification des commentaires Instagram pour ARTEP Courtage Travaux. Ce prompt sera injecté dans Make dans un module HTTP/IA. Il doit retourner un JSON strict avec : classification (simple|sensible), motif, action, extrait_sensible. Critères sensibles : prix, devis, litige, délai, juridique, mécontentement. En cas de doute → sensible. Fournis le texte du prompt prêt à copier dans Make, avec la variable {{commentaire}}.` },
+{id:"t1",category:"Prompts",icon:"💬",title:"Prompt P0 — Classification commentaire",desc:"Classification commentaire simple / sensible pour Make.",
+content:`PROMPT P0 — CLASSIFICATION COMMENTAIRE INSTAGRAM
+À injecter dans Make > module HTTP/IA
 
-  { id:"t2", category:"Prompts", icon:"📷", title:"Prompt P1 — Classification photo chantier", desc:"Génère le prompt de classification visuelle des photos pour Make.",
-    prompt:`Tu es un expert en automatisation Instagram pour ARTEP Courtage Travaux, courtier en travaux en Île-de-France. Génère le prompt opérationnel P1 de classification visuelle des photos de chantier. Le prompt sera injecté dans Make dans un module de vision IA. Il doit analyser une image et retourner un JSON strict avec : categorie (avant_apres|realisation|cuisine|salle_de_bains|extension|appartement|maison|commerce|non_classifiable), type_contenu, qualite_publication (publiable|non_publiable), confiance (0-100), raison_non_publiable, ville_detectee. Règle : si confiance < 80 → non_publiable.` },
+Tu es un classificateur de commentaires Instagram pour ARTEP Courtage Travaux, entreprise de courtage en travaux en Île-de-France.
 
-  { id:"t3", category:"Prompts", icon:"✍️", title:"Prompt P2 — Génération légende Instagram", desc:"Génère le prompt de rédaction des légendes Instagram ARTEP.",
-    prompt:`Tu es un expert en content marketing pour ARTEP Courtage Travaux, courtier en travaux en Île-de-France. Génère le prompt opérationnel P2 de génération de légende Instagram. Interdictions absolues : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux. Formulations autorisées : courtage en travaux, mise en relation, accompagnement projet, aide à la comparaison, sélection d'entreprises, conseil avant travaux. Style : sobre, humain, professionnel, 3-5 lignes max. Structure : accroche + description + hashtags (8-12). Variables Make : {{categorie}}, {{type_contenu}}, {{ville_detectee}}.` },
+Commentaire reçu : {{commentaire}}
 
-  { id:"t4", category:"Prompts", icon:"🧠", title:"Prompt P3 — Humanisation ARTEP", desc:"Génère le prompt d'humanisation du texte généré par IA.",
-    prompt:`Tu es un expert en rédaction naturelle pour ARTEP Courtage Travaux. Génère le prompt opérationnel P3 d'humanisation des textes générés par IA. Objectif : supprimer tout marqueur IA (phrases trop lisses, transitions artificielles, emphase). Règles : varier longueur des phrases, supprimer de plus/en outre/ainsi, conserver le sens exact, ne pas allonger, ne pas ajouter d'informations, conserver les hashtags. Interdictions absolues maintenues : suivi de chantier, maîtrise d'œuvre, coordination des entreprises. Variable Make : {{texte_genere}}.` },
+Analyse ce commentaire et retourne UNIQUEMENT un objet JSON :
 
-  { id:"t5", category:"Prompts", icon:"⚖️", title:"Prompt P4 — Contrôle juridique", desc:"Génère le prompt de contrôle juridique ARTEP automatique.",
-    prompt:`Tu es un expert juridique pour ARTEP Courtage Travaux, courtier en travaux. Génère le prompt opérationnel P4 de contrôle juridique automatique. Termes interdits à détecter : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux, dirige les travaux, supervise les travaux, contrôle les travaux. Retourne un JSON strict : statut (valide|bloque), termes_detectes (liste ou []), action (publier_brouillon|bloquer_et_alerter). Si bloqué : pas de brouillon, alerte immédiate. Variable Make : {{texte_a_controler}}.` },
-
-  { id:"t6", category:"Prompts", icon:"↩️", title:"Prompt P5 — Réponse commentaire Niveau 1", desc:"Génère le prompt de réponse aux commentaires simples Instagram.",
-    prompt:`Tu es le community manager d'ARTEP Courtage Travaux. Génère le prompt opérationnel P5 de réponse aux commentaires Instagram simples (compliments, félicitations, questions génériques). Règles : une seule phrase, ton sobre et humain, pas de commercial, pas de prix ni de délai, pas de promesse, pas d'emojis sauf si présents dans le commentaire d'origine, pas de formule creuse. Interdictions absolues maintenues. Variable Make : {{commentaire}}.` },
-
-  { id:"t7", category:"Prompts", icon:"🗺️", title:"Prompt P6 — Adaptation Google Business", desc:"Génère le prompt d'adaptation des posts Instagram pour Google Business.",
-    prompt:`Tu es le rédacteur Google Business d'ARTEP Courtage Travaux. Génère le prompt opérationnel P6 d'adaptation d'une légende Instagram validée pour Google Business. Différences : pas de hashtags, ton sobre et local, orienté SEO local IDF, max 3 phrases, ancrage géographique obligatoire. Structure : description sobre + ancrage local (ville/département/IDF) + appel à l'action sobre. Interdictions absolues maintenues. Variables Make : {{legende_instagram_validee}}, {{ville_detectee}}.` },
-
-  { id:"t8", category:"Architecture", icon:"📁", title:"Brief technique OneDrive", desc:"Génère l'arborescence OneDrive complète à créer avant de brancher Make.",
-    prompt:`Tu es un expert en automatisation Make pour une entreprise de courtage en travaux. Génère le brief technique complet de l'arborescence OneDrive à créer pour ARTEP Courtage Travaux Phase 1. Couvrir : photos chantier (avant/après, réalisations par catégorie : cuisine, salle de bains, extension, appartement, maison, commerce), avis clients, articles à traiter. Inclure les noms de dossiers exacts à utiliser dans Make comme déclencheurs Watch Files. Format : liste hiérarchique claire, noms en français, prête à créer dans OneDrive Business.` },
-
-  { id:"t9", category:"Architecture", icon:"⚙️", title:"Blueprint Make — Workflow photo", desc:"Génère le blueprint détaillé du workflow photo → Instagram pour Make.",
-    prompt:`Tu es un expert Make (ex-Integromat) pour ARTEP Courtage Travaux, courtier en travaux en IDF. Génère le blueprint détaillé module par module du Workflow 1 : OneDrive Watch Files → Download → Vision IA (P1 classification) → Router → IA génération texte (P2) → IA humanisation (P3) → contrôle juridique (P4) → Canva Create Design → Canva Export → Metricool Create Draft → Email notification validation. Pour chaque module : nom exact dans Make, champs à renseigner, connexions OAuth nécessaires, variables transmises entre modules. Règle absolue : aucune publication sans validation humaine.` },
-
-  { id:"t10", category:"Architecture", icon:"💬", title:"Blueprint Make — Workflow commentaires", desc:"Génère le blueprint des workflows commentaires Instagram (Niveau 1 + 2).",
-    prompt:`Tu es un expert Make pour ARTEP Courtage Travaux. Génère le blueprint Make détaillé des Workflows 4 et 5 : gestion commentaires Instagram. Workflow 4 (simples) : Instagram Watch Comments → P0 classification → si simple → P5 réponse → P4 contrôle juridique → notification Sylvain → Instagram Reply après validation. Workflow 5 (sensibles) : Instagram Watch Comments → P0 classification → si sensible → alerte email + mobile Sylvain → ajout tableau OneDrive suivi → aucune réponse automatique. Pour chaque workflow : modules Make exacts, champs, variables, logique de routage.` },
-
-  { id:"t11", category:"Canva", icon:"🎨", title:"Brief Canva — Template Avant/Après", desc:"Génère les spécifications techniques pour créer le template carrousel dans Canva Pro.",
-    prompt:`Tu es directeur artistique expert Canva Pro pour ARTEP Courtage Travaux. Charte officielle : Bleu principal #24364D, Cuivre #C4620A, Vert pétrole #1F4D4F, Blanc #FFFFFF, Fond neutre #F6F8FB. Typographie : Montserrat Bold/SemiBold pour titres, Inter Regular pour corps. Police de marque : Neometric (base de conception). Aucun dégradé, aplats uniquement. Génère les spécifications techniques complètes pour créer dans Canva Pro le Template 1 Avant/Après en carrousel 3 slides. Pour chaque slide : fond, disposition exacte, couleurs HEX, typographies avec tailles, positions des éléments, champs modifiables vs verrouillés, logo ARTEP position fixe. Format 1080x1080px.` },
-
-  { id:"t12", category:"Canva", icon:"🎨", title:"Brief Canva — Templates Réalisation, Avis, Conseil", desc:"Génère les spécifications pour les 3 templates restants.",
-    prompt:`Tu es directeur artistique expert Canva Pro pour ARTEP Courtage Travaux. Charte : #24364D (bleu), #C4620A (cuivre), #1F4D4F (pétrole), #FFFFFF, #F6F8FB. Montserrat + Inter. Neometric comme base de conception. Aucun dégradé, aplats uniquement. Génère les spécifications techniques Canva Pro complètes pour 3 templates distincts : Template 2 Réalisation (photo plein cadre + bande texte inférieure), Template 3 Avis Client (fond clair, guillemets cuivre, étoiles notation), Template 4 Conseil Travaux (fond bleu foncé #24364D, titre cuivre, 3 points structurés). Pour chaque template : disposition, couleurs HEX, typographies, champs modifiables, éléments verrouillés, logo ARTEP. Format 1080x1080px.` },
-];
-
-// ── STATE ───────────────────────────────────────────────────────────────────
-const state = {};
-TASKS.forEach(t => state[t.id] = { status: "pending", output: "" });
-let selectedId = null;
-let isRunningAll = false;
-
-// ── CLAUDE API ──────────────────────────────────────────────────────────────
-async function callClaude(prompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: "Tu es l'agent de coordination IA pour ARTEP Courtage Travaux, courtier en travaux en Île-de-France. Tu génères des livrables opérationnels précis, sans introduction ni conclusion. Réponds directement avec le contenu demandé, prêt à être utilisé ou copié.",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  const data = await res.json();
-  return data.content?.map(b => b.text || "").join("") || "Erreur API — vérifier la connexion.";
+{
+  "classification": "[simple | sensible]",
+  "motif": "[compliment | question_generique | devis | prix | delai | litige | critique | juridique | garantie | null]",
+  "action": "[traiter_automatiquement | alerter_sylvain]",
+  "extrait_sensible": "[mot ou phrase déclencheur, sinon null]"
 }
 
-// ── RENDER ──────────────────────────────────────────────────────────────────
+CRITÈRES SIMPLES :
+- compliment (bravo, magnifique, beau travail, félicitations)
+- question générique non engageante (vous intervenez où, vous faites quoi)
+
+CRITÈRES SENSIBLES — ALERTE IMMÉDIATE si présence de :
+- prix, combien, tarif, devis, budget, coût, €
+- délai, durée, quand, planning, retard
+- problème, litige, malfaçon, garantie, assurance
+- responsabilité, juridique, avocat, tribunal
+- arnaque, volé, escroquerie, plainte
+- pas content, déçu, honte, scandaleux
+
+Règle absolue : en cas de doute → sensible.
+Retourner uniquement le JSON, sans texte avant ni après.`},
+
+{id:"t2",category:"Prompts",icon:"📷",title:"Prompt P1 — Classification photo chantier",desc:"Classification visuelle des photos pour Make.",
+content:`PROMPT P1 — CLASSIFICATION PHOTO CHANTIER
+À injecter dans Make > module vision IA
+
+Tu es un assistant de classification visuelle pour ARTEP Courtage Travaux, entreprise de courtage en travaux en Île-de-France.
+
+Analyse l'image fournie et retourne UNIQUEMENT un objet JSON :
+
+{
+  "categorie": "[avant_apres | realisation | cuisine | salle_de_bains | extension | appartement | maison | commerce | non_classifiable]",
+  "type_contenu": "[avant | apres | realisation_seule]",
+  "qualite_publication": "[publiable | non_publiable]",
+  "confiance": [0 à 100],
+  "raison_non_publiable": "[flou | trop_sombre | chantier_en_cours | non_pertinent | null]",
+  "ville_detectee": "[ville si visible sur l'image, sinon null]"
+}
+
+Règle : si confiance < 80 → qualite_publication = non_publiable.
+Retourner uniquement le JSON, sans texte avant ni après.`},
+
+{id:"t3",category:"Prompts",icon:"✍️",title:"Prompt P2 — Génération légende Instagram",desc:"Rédaction des légendes Instagram ARTEP.",
+content:`PROMPT P2 — GÉNÉRATION LÉGENDE INSTAGRAM ARTEP
+À injecter dans Make > module génération texte
+
+Tu es le rédacteur Instagram d'ARTEP Courtage Travaux, entreprise de courtage en travaux en Île-de-France.
+
+Contexte de la photo :
+- Catégorie : {{categorie}}
+- Type : {{type_contenu}}
+- Ville : {{ville_detectee}}
+
+Rédige une légende Instagram en respectant ces règles :
+
+STYLE :
+- 3 à 5 lignes maximum
+- Ton sobre, humain, professionnel
+- Pas d'emphase excessive, pas de superlatifs
+- Pas de point d'exclamation répété
+- Écriture naturelle, comme un professionnel qui parle à un particulier
+
+STRUCTURE :
+- Ligne 1 : accroche courte sur la transformation ou le projet
+- Lignes 2-3 : description sobre du projet
+- Ligne 4 : hashtags (8 à 12 maximum)
+
+HASHTAGS OBLIGATOIRES :
+#artepcourtage #courtagetravaux #rénovationIDF #travaux{{ville_detectee}} #rénovationappartement
+
+INTERDICTIONS ABSOLUES :
+Ne jamais utiliser : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux.
+
+FORMULATIONS AUTORISÉES UNIQUEMENT :
+courtage en travaux, mise en relation, accompagnement projet, aide à la comparaison, sélection d'entreprises, conseil avant travaux.
+
+Retourne uniquement la légende, sans commentaire.`},
+
+{id:"t4",category:"Prompts",icon:"🧠",title:"Prompt P3 — Humanisation ARTEP",desc:"Humanisation du texte généré par IA.",
+content:`PROMPT P3 — HUMANISATION ARTEP
+À injecter dans Make > module réécriture
+
+Tu es un correcteur stylistique pour ARTEP Courtage Travaux.
+
+Voici un texte généré automatiquement :
+{{texte_genere}}
+
+Réécris ce texte en respectant ces règles :
+
+OBJECTIF :
+Supprimer tout marqueur de rédaction IA. Le texte doit sembler écrit par un professionnel humain.
+
+RÈGLES :
+- Varier la longueur des phrases
+- Supprimer les formules trop lisses ou trop parfaites
+- Supprimer les transitions artificielles (de plus, en outre, ainsi, etc.)
+- Conserver le sens exact
+- Conserver les hashtags tels quels
+- Ne pas ajouter d'informations absentes du texte original
+- Ne pas modifier les formulations juridiques validées
+- Ne pas allonger le texte
+- Ne pas ajouter de promesses ou d'engagements
+
+INTERDICTIONS ABSOLUES :
+Ne jamais utiliser : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux.
+
+Retourne uniquement le texte réécrit, sans commentaire.`},
+
+{id:"t5",category:"Prompts",icon:"⚖️",title:"Prompt P4 — Contrôle juridique",desc:"Contrôle juridique automatique ARTEP.",
+content:`PROMPT P4 — CONTRÔLE JURIDIQUE ARTEP
+À injecter dans Make > module contrôle
+
+Tu es un contrôleur juridique pour ARTEP Courtage Travaux, entreprise de courtage en travaux.
+
+Analyse le texte suivant :
+{{texte_a_controler}}
+
+Vérifie la présence des termes interdits :
+- suivi de chantier
+- maîtrise d'œuvre
+- coordination des entreprises
+- pilotage de chantier
+- direction de travaux
+- dirige les travaux
+- supervise les travaux
+- contrôle les travaux
+
+Retourne UNIQUEMENT un objet JSON :
+
+{
+  "statut": "[valide | bloque]",
+  "termes_detectes": ["terme1", "terme2"] ou [],
+  "action": "[publier_brouillon | bloquer_et_alerter]"
+}
+
+Si statut = bloque :
+- ne pas transmettre le texte
+- déclencher une alerte immédiate à Sylvain
+
+Retourner uniquement le JSON, sans texte avant ni après.`},
+
+{id:"t6",category:"Prompts",icon:"↩️",title:"Prompt P5 — Réponse commentaire Niveau 1",desc:"Réponse aux commentaires simples Instagram.",
+content:`PROMPT P5 — RÉPONSE COMMENTAIRE NIVEAU 1
+À injecter dans Make > module réponse commentaire
+
+Tu es le gestionnaire de communauté d'ARTEP Courtage Travaux.
+
+Commentaire reçu :
+{{commentaire}}
+
+Rédige une réponse en respectant ces règles :
+
+RÈGLES ABSOLUES :
+- Une seule phrase maximum
+- Ton sobre et humain
+- Pas de commercial
+- Pas de prix, pas de délai
+- Pas de promesse, pas d'engagement
+- Pas d'invitation à nous contacter sauf si commentaire = question générique
+- Pas d'emojis sauf si le commentaire en contient
+- Pas de formule creuse type "Merci pour votre confiance !"
+
+INTERDICTIONS ABSOLUES :
+Ne jamais utiliser : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux.
+
+Retourne uniquement la réponse, sans commentaire.`},
+
+{id:"t7",category:"Prompts",icon:"🗺️",title:"Prompt P6 — Adaptation Google Business",desc:"Adaptation des posts Instagram pour Google Business.",
+content:`PROMPT P6 — ADAPTATION GOOGLE BUSINESS
+À injecter dans Make > module Google Business
+
+Tu es le rédacteur Google Business d'ARTEP Courtage Travaux.
+
+Voici la légende Instagram validée :
+{{legende_instagram_validee}}
+
+Ville détectée : {{ville_detectee}}
+
+Adapte ce contenu pour Google Business en respectant ces règles :
+
+DIFFÉRENCES AVEC INSTAGRAM :
+- Pas de hashtags
+- Ton plus sobre et plus local
+- Orienté référencement local Île-de-France
+- Maximum 3 phrases
+- Mentionner la zone géographique si disponible
+
+STRUCTURE :
+- Phrase 1 : description sobre du projet
+- Phrase 2 : ancrage local (ville / département / IDF)
+- Phrase 3 : appel à l'action sobre (ex : "Contactez-nous pour échanger sur votre projet.")
+
+INTERDICTIONS ABSOLUES :
+Ne jamais utiliser : suivi de chantier, maîtrise d'œuvre, coordination des entreprises, pilotage de chantier, direction de travaux.
+
+FORMULATIONS AUTORISÉES UNIQUEMENT :
+courtage en travaux, mise en relation, accompagnement projet, aide à la comparaison, sélection d'entreprises, conseil avant travaux.
+
+Retourne uniquement le texte Google Business, sans commentaire.`},
+
+{id:"t8",category:"Architecture",icon:"📁",title:"Brief technique OneDrive",desc:"Arborescence OneDrive complète à créer avant Make.",
+content:`ARBORESCENCE ONDRIVE — ARTEP PHASE 1
+À créer dans OneDrive Business avant de brancher Make
+
+01_ARTEP_RESEAUX_SOCIAUX/
+│
+├── 07_Photos_Avant_Apres/
+│   ├── paire-01/     (déposer : chantier_[rue]_[commune]_AV.jpg + chantier_[rue]_[commune].jpg)
+│   ├── paire-02/
+│   ├── paire-03/
+│   ├── paire-04/
+│   ├── paire-05/
+│   ├── paire-06/
+│   ├── paire-07/
+│   ├── paire-08/
+│   ├── paire-09/
+│   ├── paire-10/
+│   ├── paire-11/
+│   ├── paire-12/
+│   ├── paire-13/
+│   ├── paire-14/
+│   ├── paire-15/
+│   ├── paire-16/
+│   ├── paire-17/
+│   ├── paire-18/
+│   ├── paire-19/
+│   └── paire-20/
+│
+├── 08_Realisations/
+│   ├── Cuisine/
+│   ├── Salle_de_bains/
+│   ├── Extension/
+│   ├── Appartement/
+│   ├── Maison/
+│   └── Commerce/
+│
+├── 09_Avis_Clients/
+│   └── (déposer fichiers texte .txt avec le contenu de l'avis)
+│
+└── 10_Articles_A_Traiter/
+    └── (déposer PDF, études, jugements, articles presse)
+
+CONVENTION DE NOMMAGE :
+- Photo avant : chantier_[rue]_[commune]_AV.jpg
+- Photo après : chantier_[rue]_[commune].jpg
+- Avis client : avis_[prenom]_[date].txt
+
+RÈGLE MAKE :
+Make surveille chaque dossier paire-XX via Watch Files.
+Après traitement, Make vide automatiquement le dossier.
+Les dossiers paire-01 à paire-20 sont réutilisables indéfiniment.`},
+
+{id:"t9",category:"Architecture",icon:"⚙️",title:"Blueprint Make — Workflow photo",desc:"Blueprint détaillé workflow photo → Instagram.",
+content:`BLUEPRINT MAKE — WORKFLOW 1 : PHOTO → INSTAGRAM
+Module par module
+
+DÉCLENCHEUR :
+OneDrive > Watch Files
+- Dossier : /01_ARTEP_RESEAUX_SOCIAUX/07_Photos_Avant_Apres/paire-*/
+- Surveiller : nouveaux fichiers uniquement
+- Fréquence : toutes les 15 minutes
+
+MODULE 1 — OneDrive > Watch Files
+Champs : Connection OneDrive, chemin dossier, nombre max fichiers = 2
+
+MODULE 2 — OneDrive > Download File
+Champs : ID fichier (depuis module 1), format binaire
+
+MODULE 3 — HTTP > Make an API Call (Vision IA)
+URL : API OpenAI Vision ou Claude API
+Body : image en base64 + prompt P1 classification
+Sortie : JSON {categorie, type_contenu, qualite_publication, confiance, ville_detectee}
+
+MODULE 4 — Tools > Set Variable
+Vérification confiance < 80 ou qualite_publication = non_publiable
+→ Si oui : brancher vers Module 4B (alerte)
+→ Si non : continuer vers Module 5
+
+MODULE 4B — Email > Send Email (ALERTE)
+À : sylvain@artep-courtage.fr
+Objet : "Photo non publiable détectée — vérification requise"
+Corps : catégorie + raison + nom fichier
+
+MODULE 5 — HTTP > Make an API Call (Génération texte)
+Prompt P2 injecté avec variables {{categorie}}, {{type_contenu}}, {{ville_detectee}}
+Sortie : légende Instagram brute
+
+MODULE 6 — HTTP > Make an API Call (Humanisation)
+Prompt P3 injecté avec {{texte_genere}} = sortie module 5
+Sortie : légende humanisée
+
+MODULE 7 — HTTP > Make an API Call (Contrôle juridique)
+Prompt P4 injecté avec {{texte_a_controler}} = sortie module 6
+Sortie : JSON {statut, termes_detectes, action}
+→ Si bloqué : alerte email + arrêt scénario
+→ Si valide : continuer
+
+MODULE 8 — Canva > Create Design from Template
+Template : Avant/Après ou Réalisation selon categorie
+Champs photo_1, photo_2, titre, ville à renseigner
+
+MODULE 9 — Canva > Export Design
+Format : PNG, résolution haute
+
+MODULE 10 — Metricool ou Publer > Create Draft Post
+Canal : Instagram ARTEP
+Statut : BROUILLON uniquement
+Légende : sortie module 6
+Visuel : sortie module 9
+
+MODULE 11 — Email > Send Email (NOTIFICATION VALIDATION)
+À : sylvain@artep-courtage.fr
+Objet : "1 post Instagram prêt à valider"
+Corps : légende + lien vers brouillon Metricool
+
+CONNEXIONS OAUTH NÉCESSAIRES :
+- OneDrive (Microsoft)
+- Canva Pro
+- Metricool ou Publer
+- Instagram Business (via Meta)
+- API IA (OpenAI ou Anthropic)`},
+
+{id:"t10",category:"Architecture",icon:"💬",title:"Blueprint Make — Workflow commentaires",desc:"Blueprint workflows commentaires Instagram Niveau 1 + 2.",
+content:`BLUEPRINT MAKE — WORKFLOWS 4 ET 5 : COMMENTAIRES INSTAGRAM
+
+═══════════════════════════════════════
+WORKFLOW 4 — COMMENTAIRE SIMPLE
+═══════════════════════════════════════
+
+DÉCLENCHEUR :
+Instagram Business > Watch Comments
+- Compte : ARTEP Courtage Travaux
+- Surveiller : nouveaux commentaires
+
+MODULE 1 — Instagram Business > Watch Comments
+Sortie : texte commentaire, ID commentaire, ID post
+
+MODULE 2 — HTTP > Make an API Call (P0 Classification)
+Prompt P0 injecté avec {{commentaire}}
+Sortie : JSON {classification, motif, action}
+
+MODULE 3 — Router Make
+→ Si classification = sensible : vers Workflow 5
+→ Si classification = simple : continuer
+
+MODULE 4 — HTTP > Make an API Call (P5 Réponse)
+Prompt P5 injecté avec {{commentaire}}
+Sortie : texte réponse proposée
+
+MODULE 5 — HTTP > Make an API Call (P4 Contrôle juridique)
+Prompt P4 injecté avec texte réponse
+→ Si bloqué : alerte + arrêt
+→ Si valide : continuer
+
+MODULE 6 — Email > Send Email (VALIDATION SYLVAIN)
+À : sylvain@artep-courtage.fr
+Objet : "Réponse commentaire à valider"
+Corps : commentaire original + réponse proposée + bouton valider
+
+MODULE 7 — Instagram Business > Reply to Comment
+Déclenché uniquement après validation manuelle de Sylvain
+ID commentaire : depuis module 1
+Texte : réponse validée
+
+═══════════════════════════════════════
+WORKFLOW 5 — COMMENTAIRE SENSIBLE
+═══════════════════════════════════════
+
+DÉCLENCHEUR : Router depuis Module 3 Workflow 4
+
+MODULE 1 — Email > Send Email (ALERTE DIRECTE)
+À : sylvain@artep-courtage.fr
+Objet : "⚠ COMMENTAIRE SENSIBLE — Réponse manuelle requise"
+Corps : texte commentaire + motif détecté + lien vers post Instagram
+Priorité : haute
+
+MODULE 2 — OneDrive > Create Row in Table (TABLEAU SUIVI)
+Fichier : /01_ARTEP_RESEAUX_SOCIAUX/Commentaires_sensibles.xlsx
+Colonnes : date, commentaire, motif, statut = "À traiter", post_url
+
+RÈGLE ABSOLUE :
+Aucune réponse automatique sur commentaire sensible.
+Réponse manuelle obligatoire par Sylvain uniquement.`},
+
+{id:"t11",category:"Canva",icon:"🎨",title:"Brief Canva — Template Avant/Après",desc:"Spécifications techniques carrousel 3 slides.",
+content:`BRIEF CANVA — TEMPLATE 1 : AVANT / APRÈS
+Carrousel 3 slides — Format 1080x1080px
+
+KIT DE MARQUE À CONFIGURER EN PREMIER :
+Couleur 1 : #24364D (Bleu principal ARTEP)
+Couleur 2 : #C4620A (Cuivre ARTEP)
+Couleur 3 : #1F4D4F (Vert pétrole)
+Couleur 4 : #FFFFFF (Blanc)
+Couleur 5 : #F6F8FB (Fond neutre)
+Typographie titres : Montserrat Bold / SemiBold
+Typographie corps : Inter Regular
+Police de marque : Neometric (base de conception)
+Logo : uploader Logo-2HD.png (fond blanc) et Logo-8.svg
+RÈGLE ABSOLUE : aucun dégradé, aplats uniquement
+
+─────────────────────────────
+SLIDE 1 — ACCROCHE
+─────────────────────────────
+Format : 1080x1080px
+Fond : #24364D (plein, aplat)
+
+Éléments :
+1. Filet horizontal #C4620A — 2px — centré verticalement à 45%
+2. Texte "AVANT" — Montserrat Bold — 52px — #FFFFFF — centré
+3. Barre verticale "/" — Montserrat Bold — 52px — #C4620A — centré
+4. Texte "APRÈS" — Montserrat Bold — 52px — #FFFFFF — centré
+5. Sous-titre : {{type_travaux}} — {{ville}} — Inter Regular — 13px — #6F8FB5 — centré
+6. Logo ARTEP — coin inférieur droit — 24px de marge — largeur 120px
+
+Champs modifiables : {{type_travaux}}, {{ville}}
+Éléments verrouillés : couleurs, typographies, logo, filet
+
+─────────────────────────────
+SLIDE 2 — PHOTO AVANT
+─────────────────────────────
+Fond : photo {{photo_avant}} plein cadre 1080x1080px
+Overlay : bande supérieure #24364D — hauteur 60px — opacité 85%
+Badge "AVANT" dans la bande : Montserrat Bold — 11px — #FFFFFF — lettrespace 0.2em — aligné gauche + 20px marge
+Logo ARTEP — coin inférieur droit — fond #24364D — padding 8px — largeur 100px
+
+Champs modifiables : {{photo_avant}}
+Éléments verrouillés : overlay, badge, logo
+
+─────────────────────────────
+SLIDE 3 — PHOTO APRÈS
+─────────────────────────────
+Fond : photo {{photo_apres}} plein cadre 1080x1080px
+Overlay : bande supérieure #C4620A — hauteur 60px — opacité 100%
+Badge "APRÈS" dans la bande : Montserrat Bold — 11px — #FFFFFF — lettrespace 0.2em — aligné gauche + 20px marge
+Logo ARTEP — coin inférieur droit — fond #24364D — padding 8px — largeur 100px
+
+Champs modifiables : {{photo_apres}}
+Éléments verrouillés : overlay, badge, logo`},
+
+{id:"t12",category:"Canva",icon:"🎨",title:"Brief Canva — Templates Réalisation, Avis, Conseil",desc:"Spécifications pour les 3 templates restants.",
+content:`BRIEF CANVA — TEMPLATES 2, 3 ET 4
+Format 1080x1080px — Charte ARTEP officielle
+
+═══════════════════════════════════════
+TEMPLATE 2 — RÉALISATION
+═══════════════════════════════════════
+
+Fond : photo {{photo_principale}} — cadrage haut 70% de la surface
+Bande inférieure : #24364D — hauteur 30% — aplat
+Filet séparateur : #C4620A — 3px — horizontal entre photo et bande
+Texte principal : {{phrase_courte}} — Montserrat Bold — 16px — #FFFFFF — dans la bande — aligné gauche — marge 20px
+Sous-texte : {{type_travaux}} — {{ville}} — Inter Regular — 11px — #6F8FB5 — sous le texte principal
+Logo ARTEP : coin inférieur droit dans la bande — largeur 100px
+
+Champs modifiables : {{photo_principale}}, {{phrase_courte}}, {{type_travaux}}, {{ville}}
+Éléments verrouillés : bande #24364D, filet cuivre, typographies, logo
+
+═══════════════════════════════════════
+TEMPLATE 3 — AVIS CLIENT
+═══════════════════════════════════════
+
+Fond : #F6F8FB (fond neutre clair)
+Cercle décoratif : #C4620A — opacité 6% — 200px — coin supérieur droit
+
+Éléments centraux :
+1. Guillemets " — Montserrat Bold — 80px — #C4620A — opacité 50% — aligné gauche — marge 32px
+2. Texte avis : {{extrait_avis}} — Inter Regular — 14px — #1F2937 — centré — italique — max 4 lignes
+3. Filet séparateur : #C4620A — 32px largeur — 2px hauteur — centré
+4. Étoiles : 5 étoiles pleines #C4620A — taille 14px — centrées
+5. Auteur : {{prenom_client}} · Client ARTEP — Montserrat SemiBold — 10px — #6B7280 — centré — lettrespace 0.15em
+
+Logo ARTEP : coin inférieur droit — version couleurs sur fond clair — largeur 110px
+
+RÈGLE : jamais de nom de famille, jamais de photo client
+Champs modifiables : {{extrait_avis}}, {{prenom_client}}, {{note}}
+Éléments verrouillés : fond, couleurs, typographies, logo
+
+═══════════════════════════════════════
+TEMPLATE 4 — CONSEIL TRAVAUX
+═══════════════════════════════════════
+
+Fond : #24364D (bleu principal — aplat)
+Filet supérieur : #C4620A — 3px — pleine largeur — en haut du visuel
+
+Éléments :
+1. Tag : "CONSEIL ARTEP" — Inter Regular — 10px — #C4620A — lettrespace 0.25em — haut gauche — marge 28px
+2. Titre : {{titre_conseil}} — Montserrat Bold — 24px — #FFFFFF — gauche — max 2 lignes
+3. Séparateur : #C4620A — 40px largeur — 2px — après le titre
+
+Points conseil :
+4. Puce carrée #C4620A — 6x6px
+   {{conseil_1}} — Inter Regular — 13px — #E5E7EB — max 2 lignes
+5. Puce carrée #C4620A
+   {{conseil_2}} — Inter Regular — 13px — #E5E7EB
+6. Puce carrée #C4620A
+   {{conseil_3}} — Inter Regular — 13px — #E5E7EB
+
+Logo ARTEP : coin inférieur droit — version blanche/claire — largeur 100px
+
+Champs modifiables : {{titre_conseil}}, {{conseil_1}}, {{conseil_2}}, {{conseil_3}}
+Éléments verrouillés : fond #24364D, filet cuivre, tag, typographies, logo`}
+];
+
+const STORAGE_KEY = "artep_agent_v2";
 const STATUS_CFG = {
-  pending:  { label: "En attente",  color: "#6B7280", bg: "#F3F4F6" },
-  running:  { label: "Génération…", color: "#24364D", bg: "#EEF3F8" },
-  review:   { label: "À valider",   color: "#C4620A", bg: "#FEF3E8" },
-  approved: { label: "Validé ✓",   color: "#1F4D4F", bg: "#E8F2F2" },
-  rejected: { label: "Refusé",     color: "#DC2626", bg: "#FEF2F2" },
+  review:   {label:"À valider",  color:"#C4620A", bg:"#FEF3E8"},
+  approved: {label:"Validé ✓",  color:"#1F4D4F", bg:"#E8F2F2"},
+  rejected: {label:"À revoir",  color:"#DC2626", bg:"#FEF2F2"},
 };
 
+// État
+const state = {};
+TASKS.forEach(t => state[t.id] = {status:"review", output:t.content});
+let selectedId = null;
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(id => { if(state[id]) state[id] = parsed[id]; });
+    }
+  } catch(e){}
+}
+
 function render() {
-  const counts = { pending:0, running:0, review:0, approved:0, rejected:0 };
-  Object.values(state).forEach(s => counts[s.status]++);
+  const counts = {review:0, approved:0, rejected:0};
+  Object.values(state).forEach(s => { if(counts[s.status]!==undefined) counts[s.status]++; });
 
-  document.getElementById("count-pending").textContent  = counts.pending;
-  document.getElementById("count-review").textContent   = counts.review;
+  document.getElementById("count-pending").textContent = 0;
+  document.getElementById("count-review").textContent = counts.review;
   document.getElementById("count-approved").textContent = counts.approved;
-  document.getElementById("prog-count").textContent     = `${counts.approved} / ${TASKS.length} livrables`;
-  document.getElementById("prog-bar").style.width       = `${(counts.approved / TASKS.length) * 100}%`;
+  document.getElementById("prog-count").textContent = counts.approved + " / " + TASKS.length;
+  document.getElementById("prog-bar").style.width = (counts.approved / TASKS.length * 100) + "%";
 
-  const alertEl = document.getElementById("alert-review");
-  if (counts.review > 0) {
-    alertEl.style.display = "block";
-    alertEl.textContent = `⚠ ${counts.review} livrable${counts.review > 1 ? "s" : ""} en attente de ta validation`;
-  } else {
-    alertEl.style.display = "none";
-  }
-
-  const btnAll = document.getElementById("btn-run-all");
-  if (counts.pending === 0) {
-    btnAll.style.display = "none";
-  } else {
-    btnAll.style.display = "flex";
-    btnAll.disabled = isRunningAll;
-    btnAll.innerHTML = isRunningAll
-      ? `<span class="spinner"></span> Génération en cours… (${counts.pending} restants)`
-      : `▶ Générer tous les livrables (${counts.pending} en attente)`;
-  }
-
-  ["Prompts", "Architecture", "Canva"].forEach(cat => {
-    const container = document.getElementById(`cat-${cat}`);
+  ["Prompts","Architecture","Canva"].forEach(cat => {
+    const container = document.getElementById("cat-" + cat);
     container.innerHTML = "";
     TASKS.filter(t => t.category === cat).forEach(task => {
       const s = state[task.id];
       const cfg = STATUS_CFG[s.status];
-      const clickable = s.status === "review" || s.status === "approved";
       const isSelected = selectedId === task.id;
-
       const card = document.createElement("div");
-      card.className = `task-card${clickable ? " clickable" : ""}${isSelected ? " selected" : ""}`;
-      if (clickable) card.onclick = () => openPanel(task.id);
-
+      card.className = "task-card clickable" + (isSelected ? " selected" : "");
+      card.onclick = () => openPanel(task.id);
       card.innerHTML = `
         <div class="task-left">
           <div class="task-icon">${task.icon}</div>
@@ -554,80 +687,46 @@ function render() {
         </div>
         <div class="task-right">
           <span class="badge" style="color:${cfg.color};background:${cfg.bg}">${cfg.label}</span>
-          ${s.status === "pending"  ? `<button class="btn-generate" onclick="event.stopPropagation();runTask('${task.id}')">Générer</button>` : ""}
-          ${s.status === "rejected" ? `<button class="btn-regen"    onclick="event.stopPropagation();runTask('${task.id}')">Regénérer</button>` : ""}
-        </div>
-      `;
+        </div>`;
       container.appendChild(card);
     });
   });
 
-  // Panel
   const layout = document.getElementById("layout");
-  const panel  = document.getElementById("review-panel");
+  const panel = document.getElementById("review-panel");
   if (selectedId) {
     layout.classList.add("with-panel");
     panel.classList.add("visible");
     const task = TASKS.find(t => t.id === selectedId);
-    document.getElementById("review-title").textContent = `${task.icon} ${task.title}`;
-    document.getElementById("review-textarea").value = state[selectedId].output;
+    document.getElementById("review-title").textContent = task.icon + " " + task.title;
+    const ta = document.getElementById("review-textarea");
+    if (ta.dataset.taskId !== selectedId) {
+      ta.value = state[selectedId].output;
+      ta.dataset.taskId = selectedId;
+    }
   } else {
     layout.classList.remove("with-panel");
     panel.classList.remove("visible");
   }
 }
 
-// ── ACTIONS ─────────────────────────────────────────────────────────────────
-async function runTask(id) {
-  if (state[id].status === "running") return;
-  state[id].status = "running";
-  state[id].output = "";
-  render();
-  const task = TASKS.find(t => t.id === id);
-  try {
-    state[id].output = await callClaude(task.prompt);
-    state[id].status = "review";
-    selectedId = id;
-  } catch(e) {
-    state[id].output = "Erreur lors de la génération. Réessayez.";
-    state[id].status = "review";
-  }
-  render();
-}
-
-async function runAll() {
-  isRunningAll = true;
-  render();
-  for (const task of TASKS) {
-    if (state[task.id].status === "pending") { await runTask(task.id); saveState(); }
-  }
-  isRunningAll = false;
-  render();
-}
-
-function openPanel(id) {
-  selectedId = id;
-  render();
-}
-
-function closePanel() {
-  selectedId = null;
-  render();
-}
+function openPanel(id) { selectedId = id; render(); }
+function closePanel() { selectedId = null; render(); }
 
 function approveSelected() {
   if (!selectedId) return;
   state[selectedId].output = document.getElementById("review-textarea").value;
   state[selectedId].status = "approved";
-  selectedId = null;
-  render();
+  const idx = TASKS.findIndex(t => t.id === selectedId);
+  const next = TASKS[idx + 1];
+  selectedId = next ? next.id : null;
+  saveState(); render();
 }
 
 function rejectSelected() {
   if (!selectedId) return;
   state[selectedId].status = "rejected";
-  selectedId = null;
-  render();
+  saveState(); render();
 }
 
 function copySelected() {
@@ -639,69 +738,14 @@ function copySelected() {
   });
 }
 
-// ── LOCALSTORAGE PERSISTENCE ─────────────────────────────────────────────────
-const STORAGE_KEY = "artep_agent_v1";
-
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch(e) {}
-}
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      Object.keys(parsed).forEach(id => {
-        if (state[id] !== undefined) {
-          state[id] = parsed[id];
-          // Si une tâche était "running" lors de la fermeture, la repasser en pending
-          if (state[id].status === "running") state[id].status = "pending";
-        }
-      });
-    }
-  } catch(e) {}
-}
-
-// Patch toutes les actions pour sauvegarder après chaque changement
-const _runTask = runTask;
-runTask = async function(id) {
-  await _runTask(id);
-  saveState();
-};
-
-const _approveSelected = approveSelected;
-approveSelected = function() {
-  _approveSelected();
-  saveState();
-};
-
-const _rejectSelected = rejectSelected;
-rejectSelected = function() {
-  _rejectSelected();
-  saveState();
-};
-
-// Bouton reset
-document.querySelector(".progress-box").insertAdjacentHTML("afterend", `
-  <div style="margin-top:12px;text-align:center">
-    <button onclick="resetAll()" style="background:none;border:1px solid #E5E7EB;border-radius:8px;
-      padding:6px 14px;font-size:10px;color:#6B7280;cursor:pointer;font-family:Montserrat,sans-serif;">
-      🔄 Réinitialiser l'agent
-    </button>
-  </div>
-`);
-
 function resetAll() {
-  if (!confirm("Réinitialiser tous les livrables ? Cette action est irréversible.")) return;
-  TASKS.forEach(t => { state[t.id] = { status: "pending", output: "" }; });
+  if (!confirm("Réinitialiser toutes les validations ?")) return;
+  TASKS.forEach(t => state[t.id] = {status:"review", output:t.content});
   selectedId = null;
   localStorage.removeItem(STORAGE_KEY);
   render();
 }
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
 loadState();
 render();
 </script>
