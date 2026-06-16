@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scanner Immobilier IA V3</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#0a0f1a;color:#f1f5f9;font-family:'DM Mono','Fira Code',monospace;}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#1e2d45}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Syne:wght@800&display=swap');
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {
+  useState,
+  useCallback,
+  useRef,
+  useEffect
+} = React;
+const C = {
+  bg: "#0a0f1a",
+  surface: "#0f1623",
+  card: "#141c2e",
+  border: "#1e2d45",
+  gold: "#f59e0b",
+  blue: "#3b82f6",
+  green: "#10b981",
+  red: "#ef4444",
+  orange: "#f97316",
+  purple: "#8b5cf6",
+  cyan: "#06b6d4",
+  text: "#f1f5f9",
+  muted: "#4b6080",
+  sub: "#7a95b0"
+};
+const TYPES = ["Appartement", "Maison", "Immeuble de rapport", "Terrain", "Local commercial", "Parking / Box"];
+const DPES = ["A", "B", "C", "D", "E", "F", "G"];
+const DPE_CLR = {
+  A: "#10b981",
+  B: "#84cc16",
+  C: "#bef264",
+  D: "#f59e0b",
+  E: "#fb923c",
+  F: "#f97316",
+  G: "#ef4444"
+};
+const PLATEFORMES = [{
+  id: "seloger",
+  label: "SeLoger",
+  cat: "Classique"
+}, {
+  id: "leboncoin",
+  label: "LeBonCoin",
+  cat: "Classique"
+}, {
+  id: "pap",
+  label: "PAP.fr",
+  cat: "Classique"
+}, {
+  id: "logicimmo",
+  label: "Logic-immo",
+  cat: "Classique"
+}, {
+  id: "bienici",
+  label: "BienIci",
+  cat: "Classique"
+}, {
+  id: "meilleursag",
+  label: "MeilleursAgents",
+  cat: "Classique"
+}, {
+  id: "avendre",
+  label: "AVendre ALouer",
+  cat: "Classique"
+}, {
+  id: "century21",
+  label: "Century21",
+  cat: "Agence"
+}, {
+  id: "orpi",
+  label: "Orpi",
+  cat: "Agence"
+}, {
+  id: "laforet",
+  label: "LaForêt",
+  cat: "Agence"
+}, {
+  id: "guychoquet",
+  label: "Guy Hoquet",
+  cat: "Agence"
+}, {
+  id: "licitor",
+  label: "Licitor",
+  cat: "Judiciaire"
+}, {
+  id: "avoventes",
+  label: "Avoventes",
+  cat: "Judiciaire"
+}, {
+  id: "vench",
+  label: "Vench",
+  cat: "Judiciaire"
+}, {
+  id: "enchpub",
+  label: "Enchères-Publiques",
+  cat: "Judiciaire"
+}, {
+  id: "domaine",
+  label: "Domaine-enchères.gouv",
+  cat: "État"
+}, {
+  id: "notaires",
+  label: "Notaires.fr",
+  cat: "Notarial"
+}, {
+  id: "immonot",
+  label: "Immonot",
+  cat: "Notarial"
+}, {
+  id: "bodacc",
+  label: "BODACC",
+  cat: "Liquidation"
+}];
+const CAT_CLR = {
+  Classique: C.blue,
+  Agence: C.purple,
+  Judiciaire: C.orange,
+  État: C.cyan,
+  Notarial: C.green,
+  Liquidation: C.red
+};
+const CATS = ["Classique", "Agence", "Judiciaire", "État", "Notarial", "Liquidation"];
+const ZONE_MODES = ["Villes", "Départements", "Régions", "Ville + rayon"];
+const TRAVAUX_OPTS = ["Avec travaux", "Sans travaux", "Indifférent"];
+const PIPE_STATUTS = ["À visiter", "Visité", "Offre faite", "Écarté", "Acquis"];
+const DISPO_STATUTS = ["Inconnu", "Disponible", "Indisponible", "À vérifier"];
+const PIPE_CLR = {
+  "À visiter": C.blue,
+  "Visité": C.gold,
+  "Offre faite": C.orange,
+  "Écarté": C.muted,
+  "Acquis": C.green
+};
+const DISPO_CLR = {
+  Inconnu: C.muted,
+  Disponible: C.green,
+  Indisponible: C.red,
+  "À vérifier": C.orange
+};
+const DEFAULT = {
+  types: ["Appartement"],
+  piecesMin: "",
+  piecesMax: "",
+  chambresMin: "",
+  surfaceMin: "70",
+  surfaceMax: "",
+  budgetMin: "",
+  budgetMax: "150000",
+  dpe: ["F", "G"],
+  travaux: "Avec travaux",
+  zoneMode: "Villes",
+  zones: "",
+  rayon: "15",
+  plateformes: ["seloger", "leboncoin", "pap", "logicimmo", "bienici", "licitor", "avoventes", "vench", "enchpub", "notaires"]
+};
+const daysSince = d => Math.floor((Date.now() - new Date(d)) / 86400000);
+const fmtDt = d => new Date(d).toLocaleDateString("fr-FR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
+const fmtEur = v => v ? parseInt(v).toLocaleString("fr-FR") + " €" : "";
+function Tag({
+  label,
+  color
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      padding: "2px 8px",
+      borderRadius: 4,
+      fontSize: 10,
+      fontWeight: 700,
+      background: color + "22",
+      color,
+      border: `1px solid ${color}44`,
+      whiteSpace: "nowrap"
+    }
+  }, label);
+}
+function Pill({
+  label,
+  selected,
+  onClick,
+  color
+}) {
+  const c = color || C.gold;
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick,
+    style: {
+      padding: "5px 12px",
+      borderRadius: 20,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 11,
+      fontWeight: 700,
+      border: `1px solid ${selected ? c : C.border}`,
+      background: selected ? c + "22" : C.card,
+      color: selected ? c : C.muted
+    }
+  }, label);
+}
+function NumField({
+  value,
+  onChange,
+  placeholder,
+  suffix
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 7,
+      padding: "8px 11px",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: value,
+    onChange: e => onChange(e.target.value),
+    placeholder: placeholder || "—",
+    style: {
+      background: "none",
+      border: "none",
+      color: C.text,
+      fontSize: 13,
+      width: "100%",
+      fontFamily: "inherit",
+      outline: "none"
+    }
+  }), suffix && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      whiteSpace: "nowrap"
+    }
+  }, suffix));
+}
+function MicBtn({
+  onResult,
+  title
+}) {
+  const [active, setActive] = useState(false);
+  const ref = useRef(null);
+  const toggle = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert("Micro : utilisez Chrome ou Safari.");
+      return;
+    }
+    if (active) {
+      ref.current?.stop();
+      setActive(false);
+      return;
+    }
+    const r = new SR();
+    r.lang = "fr-FR";
+    r.continuous = false;
+    r.interimResults = false;
+    r.onresult = e => {
+      onResult(e.results[0][0].transcript);
+      setActive(false);
+    };
+    r.onerror = r.onend = () => setActive(false);
+    r.start();
+    ref.current = r;
+    setActive(true);
+  };
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: toggle,
+    title: title || "Dicter",
+    style: {
+      padding: "7px 9px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 14,
+      border: `1px solid ${active ? "#ef4444" : C.border}`,
+      background: active ? "#ef444422" : C.surface,
+      color: active ? "#ef4444" : C.muted,
+      boxShadow: active ? "0 0 0 3px #ef444433" : "none"
+    }
+  }, active ? "⏹" : "🎤");
+}
+function SL({
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: C.muted,
+      letterSpacing: "0.14em",
+      fontWeight: 700,
+      marginBottom: 8
+    }
+  }, children);
+}
+function Divider({
+  color,
+  label
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9,
+      color: color,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      whiteSpace: "nowrap"
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 1,
+      flex: 1,
+      background: color + "22"
+    }
+  }));
+}
+function App() {
+  const [tab, setTab] = useState("scanner");
+  const [params, setParams] = useState({
+    ...DEFAULT
+  });
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("immo_api_key") || "");
+  const [scanning, setScanning] = useState(false);
+  const [listings, setListings] = useState([]);
+  const [summary, setSummary] = useState("");
+  const [error, setError] = useState("");
+  const [lastScan, setLastScan] = useState(null);
+  const [expanded, setExpanded] = useState({});
+  const [coeurs, setCoeurs] = useState(() => JSON.parse(localStorage.getItem("immo_coeurs") || "[]"));
+  const [pipeline, setPipeline] = useState(() => JSON.parse(localStorage.getItem("immo_pipeline") || "[]"));
+  const [searches, setSearches] = useState(() => JSON.parse(localStorage.getItem("immo_searches") || "[]"));
+  const [srchName, setSrchName] = useState("");
+  const [fDispo, setFDispo] = useState("Tous");
+  const [fPipe, setFPipe] = useState("Tous");
+  const [showKey, setShowKey] = useState(!localStorage.getItem("immo_api_key"));
+  const saveKey = k => {
+    setApiKey(k);
+    localStorage.setItem("immo_api_key", k);
+  };
+  const sp = key => val => setParams(p => ({
+    ...p,
+    [key]: val
+  }));
+  const toggleExp = id => setExpanded(p => ({
+    ...p,
+    [id]: !p[id]
+  }));
+  const saveCoeurs = data => {
+    setCoeurs(data);
+    localStorage.setItem("immo_coeurs", JSON.stringify(data));
+  };
+  const savePipeline = data => {
+    setPipeline(data);
+    localStorage.setItem("immo_pipeline", JSON.stringify(data));
+  };
+  const saveSearches = data => {
+    setSearches(data);
+    localStorage.setItem("immo_searches", JSON.stringify(data));
+  };
+  const handleVoice = useCallback(t => {
+    const txt = t.toLowerCase();
+    const upd = {};
+    if (txt.includes("immeuble")) upd.types = ["Immeuble de rapport"];else if (txt.includes("terrain")) upd.types = ["Terrain"];else if (txt.includes("maison")) upd.types = ["Maison"];else if (txt.includes("local")) upd.types = ["Local commercial"];else if (txt.includes("parking")) upd.types = ["Parking / Box"];else if (txt.includes("appartement")) upd.types = ["Appartement"];
+    const tM = txt.match(/t\s?(\d)/);
+    if (tM) upd.piecesMin = tM[1];
+    const ch = txt.match(/(\d+)\s*chambre/);
+    if (ch) upd.chambresMin = ch[1];
+    const sf = txt.match(/(\d+)\s*m/);
+    if (sf && parseInt(sf[1]) > 10) upd.surfaceMin = sf[1];
+    const bd = txt.match(/(\d[\d\s]*)(k€|k euros?|000\s*euros?|mille|€)/i);
+    if (bd) {
+      let v = parseInt(bd[1].replace(/\s/g, ""));
+      if (bd[2].toLowerCase().startsWith("k") || bd[2].toLowerCase().startsWith("mille")) v *= 1000;
+      upd.budgetMax = String(v);
+    }
+    if (txt.includes("sans travaux") || txt.includes("rénové")) upd.travaux = "Sans travaux";else if (txt.includes("travaux")) upd.travaux = "Avec travaux";
+    if (txt.includes("dpe f") || txt.includes("dpe g") || txt.includes("décoté")) upd.dpe = ["F", "G"];
+    const dM = txt.match(/département\s+(\d+)/);
+    if (dM) {
+      upd.zones = dM[1];
+      upd.zoneMode = "Départements";
+    }
+    setParams(p => ({
+      ...p,
+      ...upd
+    }));
+  }, []);
+  const buildPrompt = useCallback(() => {
+    const platNames = params.plateformes.map(id => PLATEFORMES.find(p => p.id === id)?.label || id).join(", ");
+    const zoneStr = params.zoneMode === "Ville + rayon" ? `${params.zones} et dans un rayon de ${params.rayon} km` : params.zones || "France entière";
+    const criteria = [`Types : ${params.types.join(", ")}`, params.piecesMin && `Pièces min : ${params.piecesMin}${params.piecesMax ? " — max : " + params.piecesMax : ""}`, params.chambresMin && `Chambres min : ${params.chambresMin}`, params.surfaceMin && `Surface min : ${params.surfaceMin} m²`, params.surfaceMax && `Surface max : ${params.surfaceMax} m²`, params.budgetMin && `Budget min : ${params.budgetMin} €`, params.budgetMax && `Budget max : ${params.budgetMax} €`, params.dpe.length && `DPE : ${params.dpe.join(" ou ")}`, `État : ${params.travaux}`, `Zone : ${zoneStr}`].filter(Boolean).join("\n- ");
+    return `Tu es un expert en investissement immobilier France. Recherche des biens RÉELS sur : ${platNames}.\n\nCRITÈRES STRICTS :\n- ${criteria}\n\nRetourne UNIQUEMENT ce JSON (zéro texte, zéro markdown) :\n{\n  "listings": [{\n    "titre": "résumé court",\n    "prix": "XXX XXX €",\n    "surface": "XX m²",\n    "type": "type exact",\n    "pieces": "X pièces",\n    "chambres": "X chambres",\n    "localisation": "Ville Code",\n    "dpe": "lettre ou null",\n    "travaux": true,\n    "description": "état détaillé",\n    "potentiel": "analyse rentabilité / transformation / valorisation",\n    "alerte": "vigilance ou null",\n    "source": "plateforme"\n  }],\n  "summary": "synthèse 2-3 phrases : prix constatés, disponibilité, meilleure opportunité"\n}`;
+  }, [params]);
+  const runScan = useCallback(async () => {
+    if (!apiKey) {
+      setShowKey(true);
+      setError("Clé API requise — configure-la ci-dessus.");
+      return;
+    }
+    if (params.plateformes.length === 0) {
+      setError("Sélectionne au moins une plateforme.");
+      return;
+    }
+    setScanning(true);
+    setError("");
+    setListings([]);
+    setSummary("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          tools: [{
+            type: "web_search_20250305",
+            name: "web_search"
+          }],
+          messages: [{
+            role: "user",
+            content: buildPrompt()
+          }]
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || "Erreur API");
+      const text = data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("Pas de résultat structuré — relance le scan.");
+      const parsed = JSON.parse(match[0]);
+      setListings(parsed.listings || []);
+      setSummary(parsed.summary || "");
+      setLastScan(new Date());
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setScanning(false);
+    }
+  }, [buildPrompt, params.plateformes, apiKey]);
+  const isCoeur = t => !!coeurs.find(c => c.titre === t);
+  const addCoeur = bien => {
+    if (isCoeur(bien.titre)) return;
+    saveCoeurs([...coeurs, {
+      ...bien,
+      favoritedAt: new Date().toISOString(),
+      disponibilite: "Inconnu",
+      note: ""
+    }]);
+  };
+  const delCoeur = t => saveCoeurs(coeurs.filter(c => c.titre !== t));
+  const updCoeur = (t, u) => saveCoeurs(coeurs.map(c => c.titre === t ? {
+    ...c,
+    ...u
+  } : c));
+  const isPiped = t => !!pipeline.find(c => c.titre === t);
+  const addPipe = bien => {
+    if (isPiped(bien.titre)) return;
+    savePipeline([...pipeline, {
+      ...bien,
+      statut: "À visiter",
+      note: ""
+    }]);
+  };
+  const delPipe = t => savePipeline(pipeline.filter(c => c.titre !== t));
+  const updPipe = (t, u) => savePipeline(pipeline.map(c => c.titre === t ? {
+    ...c,
+    ...u
+  } : c));
+  const doSaveSearch = () => {
+    if (!srchName.trim()) return;
+    saveSearches([...searches, {
+      name: srchName,
+      params: {
+        ...params
+      },
+      savedAt: new Date().toISOString()
+    }]);
+    setSrchName("");
+  };
+  const loadSearch = s => {
+    setParams({
+      ...s.params
+    });
+    setTab("scanner");
+  };
+  const delSearch = n => saveSearches(searches.filter(s => s.name !== n));
+  const filteredCoeurs = fDispo === "Tous" ? coeurs : coeurs.filter(c => c.disponibilite === fDispo);
+  const filteredPipe = fPipe === "Tous" ? pipeline : pipeline.filter(c => c.statut === fPipe);
+  const TABS = [{
+    id: "scanner",
+    label: "Scanner"
+  }, {
+    id: "coeurs",
+    label: "Coups de coeur" + (coeurs.length > 0 ? " (" + coeurs.length + ")" : "")
+  }, {
+    id: "pipeline",
+    label: "Pipeline" + (pipeline.length > 0 ? " (" + pipeline.length + ")" : "")
+  }, {
+    id: "saved",
+    label: "Recherches" + (searches.length > 0 ? " (" + searches.length + ")" : "")
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: C.bg,
+      color: C.text,
+      fontFamily: "'DM Mono','Fira Code',monospace"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "linear-gradient(160deg,#0d1829,#112240)",
+      padding: "16px 20px 14px",
+      borderBottom: `1px solid ${C.border}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 780,
+      margin: "0 auto",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: C.gold,
+      letterSpacing: "0.2em",
+      fontWeight: 700,
+      marginBottom: 4
+    }
+  }, "PMO \xB7 SCI IMMO \xB7 SCANNER V3"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: "'Syne',sans-serif",
+      fontSize: 21,
+      fontWeight: 800,
+      letterSpacing: "-0.02em"
+    }
+  }, "Chasseur Immobilier IA"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 4
+    }
+  }, "National \xB7 19 plateformes \xB7 Multi-types \xB7 Voix \xB7 Coups de c\u0153ur")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      alignItems: "flex-end"
+    }
+  }, lastScan && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right",
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "Scan : ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.gold,
+      fontWeight: 700
+    }
+  }, lastScan.toLocaleTimeString("fr-FR"))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowKey(s => !s),
+    style: {
+      padding: "5px 12px",
+      borderRadius: 6,
+      border: `1px solid ${apiKey ? C.green : C.orange}`,
+      background: "none",
+      color: apiKey ? C.green : C.orange,
+      fontSize: 10,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, apiKey ? "✓ API OK" : "⚙ Clé API"))), showKey && /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 780,
+      margin: "12px auto 0",
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 10,
+      padding: "14px 16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 8
+    }
+  }, "Cl\xE9 API Anthropic \u2014 ", /*#__PURE__*/React.createElement("a", {
+    href: "https://console.anthropic.com",
+    target: "_blank",
+    style: {
+      color: C.blue
+    }
+  }, "console.anthropic.com"), " \u2192 API Keys \u2192 Create Key"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: apiKey,
+    onChange: e => saveKey(e.target.value),
+    placeholder: "sk-ant-...",
+    style: {
+      flex: 1,
+      background: C.surface,
+      border: `1px solid ${apiKey ? C.green : C.border}`,
+      borderRadius: 7,
+      padding: "8px 12px",
+      color: C.text,
+      fontSize: 13,
+      fontFamily: "inherit"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowKey(false),
+    style: {
+      padding: "8px 16px",
+      borderRadius: 7,
+      border: `1px solid ${C.gold}`,
+      background: C.gold + "22",
+      color: C.gold,
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "OK")), apiKey && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.green,
+      marginTop: 6
+    }
+  }, "\u2713 Cl\xE9 enregistr\xE9e localement"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.surface,
+      borderBottom: `1px solid ${C.border}`,
+      overflowX: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 780,
+      margin: "0 auto",
+      display: "flex"
+    }
+  }, TABS.map(t => /*#__PURE__*/React.createElement("button", {
+    key: t.id,
+    onClick: () => setTab(t.id),
+    style: {
+      padding: "11px 18px",
+      border: "none",
+      background: "none",
+      color: tab === t.id ? C.gold : C.muted,
+      borderBottom: `2px solid ${tab === t.id ? C.gold : "transparent"}`,
+      fontSize: 11,
+      fontWeight: 700,
+      whiteSpace: "nowrap",
+      cursor: "pointer"
+    }
+  }, t.label)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 780,
+      margin: "0 auto",
+      padding: "20px 16px 60px"
+    }
+  }, tab === "scanner" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: "fadeIn .3s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `${C.gold}0a`,
+      border: `1px solid ${C.gold}33`,
+      borderRadius: 10,
+      padding: "12px 16px",
+      marginBottom: 18,
+      display: "flex",
+      alignItems: "center",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement(MicBtn, {
+    onResult: handleVoice,
+    title: "D\xE9crire ma recherche \xE0 la voix"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.gold
+    }
+  }, "D\xE9crire \xE0 la voix"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 1
+    }
+  }, "Ex : \"Appartement T3 avec travaux \xE0 Paris, moins de 200 000 euros\""))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement(SL, null, "TYPE DE BIEN"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6
+    }
+  }, TYPES.map(t => /*#__PURE__*/React.createElement(Pill, {
+    key: t,
+    label: t,
+    color: C.gold,
+    selected: params.types.includes(t),
+    onClick: () => {
+      const n = params.types.includes(t) ? params.types.filter(x => x !== t) : [...params.types, t];
+      if (n.length > 0) sp("types")(n);
+    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 10,
+      marginBottom: 16
+    }
+  }, [{
+    label: "PIÈCES MIN",
+    k: "piecesMin",
+    ph: "Ex: 3"
+  }, {
+    label: "PIÈCES MAX",
+    k: "piecesMax",
+    ph: "Ex: 5"
+  }, {
+    label: "CHAMBRES MIN",
+    k: "chambresMin",
+    ph: "Ex: 2"
+  }].map(f => /*#__PURE__*/React.createElement("div", {
+    key: f.k
+  }, /*#__PURE__*/React.createElement(SL, null, f.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement(NumField, {
+    value: params[f.k],
+    onChange: sp(f.k),
+    placeholder: f.ph
+  }), /*#__PURE__*/React.createElement(MicBtn, {
+    onResult: v => {
+      const m = v.match(/\d+/);
+      if (m) sp(f.k)(m[0]);
+    }
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 12,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SL, null, "SURFACE (m\xB2)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(NumField, {
+    value: params.surfaceMin,
+    onChange: sp("surfaceMin"),
+    placeholder: "Min"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontSize: 11
+    }
+  }, "\u2192"), /*#__PURE__*/React.createElement(NumField, {
+    value: params.surfaceMax,
+    onChange: sp("surfaceMax"),
+    placeholder: "Max"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SL, null, "BUDGET (\u20AC)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(NumField, {
+    value: params.budgetMin,
+    onChange: sp("budgetMin"),
+    placeholder: "Min"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontSize: 11
+    }
+  }, "\u2192"), /*#__PURE__*/React.createElement(NumField, {
+    value: params.budgetMax,
+    onChange: sp("budgetMax"),
+    placeholder: "Max"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 12,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SL, null, "DPE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap"
+    }
+  }, DPES.map(d => /*#__PURE__*/React.createElement(Pill, {
+    key: d,
+    label: d,
+    color: DPE_CLR[d],
+    selected: params.dpe.includes(d),
+    onClick: () => {
+      const n = params.dpe.includes(d) ? params.dpe.filter(x => x !== d) : [...params.dpe, d];
+      if (n.length > 0) sp("dpe")(n);
+    }
+  })))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SL, null, "\xC9TAT"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 5
+    }
+  }, TRAVAUX_OPTS.map(o => /*#__PURE__*/React.createElement(Pill, {
+    key: o,
+    label: o,
+    color: C.cyan,
+    selected: params.travaux === o,
+    onClick: () => sp("travaux")(o)
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement(SL, null, "ZONE G\xC9OGRAPHIQUE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, ZONE_MODES.map(m => /*#__PURE__*/React.createElement(Pill, {
+    key: m,
+    label: m,
+    color: C.purple,
+    selected: params.zoneMode === m,
+    onClick: () => sp("zoneMode")(m)
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 7,
+      padding: "8px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: params.zones,
+    onChange: e => sp("zones")(e.target.value),
+    placeholder: params.zoneMode === "Villes" ? "Ex: Chelles, Gagny, Paris..." : params.zoneMode === "Départements" ? "Ex: 77, 93, 94..." : params.zoneMode === "Régions" ? "Ex: Île-de-France, PACA..." : "Ex: Chelles (centre du rayon)",
+    style: {
+      background: "none",
+      border: "none",
+      color: C.text,
+      fontSize: 13,
+      width: "100%",
+      fontFamily: "inherit"
+    }
+  })), /*#__PURE__*/React.createElement(MicBtn, {
+    onResult: v => sp("zones")(v),
+    title: "Dicter la zone"
+  })), params.zoneMode === "Ville + rayon" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: C.muted,
+      whiteSpace: "nowrap"
+    }
+  }, "Rayon :"), /*#__PURE__*/React.createElement(NumField, {
+    value: params.rayon,
+    onChange: sp("rayon"),
+    placeholder: "15",
+    suffix: "km"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(SL, null, "PLATEFORMES (", params.plateformes.length, " / ", PLATEFORMES.length, ")"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => sp("plateformes")(PLATEFORMES.map(p => p.id)),
+    style: {
+      fontSize: 10,
+      color: C.blue,
+      background: "none",
+      border: `1px solid ${C.border}`,
+      borderRadius: 4,
+      padding: "3px 8px",
+      cursor: "pointer"
+    }
+  }, "Tout"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => sp("plateformes")([]),
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      background: "none",
+      border: `1px solid ${C.border}`,
+      borderRadius: 4,
+      padding: "3px 8px",
+      cursor: "pointer"
+    }
+  }, "Aucun"))), CATS.map(cat => {
+    const plats = PLATEFORMES.filter(p => p.cat === cat);
+    return /*#__PURE__*/React.createElement("div", {
+      key: cat,
+      style: {
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement(Divider, {
+      color: CAT_CLR[cat],
+      label: cat.toUpperCase()
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 5
+      }
+    }, plats.map(p => /*#__PURE__*/React.createElement(Pill, {
+      key: p.id,
+      label: p.label,
+      color: CAT_CLR[cat],
+      selected: params.plateformes.includes(p.id),
+      onClick: () => {
+        const n = params.plateformes.includes(p.id) ? params.plateformes.filter(x => x !== p.id) : [...params.plateformes, p.id];
+        sp("plateformes")(n);
+      }
+    }))));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 10,
+      padding: "12px 14px",
+      marginBottom: 14,
+      display: "flex",
+      gap: 8,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13
+    }
+  }, "\uD83D\uDD16"), /*#__PURE__*/React.createElement("input", {
+    value: srchName,
+    onChange: e => setSrchName(e.target.value),
+    placeholder: "Nommer cette recherche pour la sauvegarder...",
+    style: {
+      flex: 1,
+      background: "none",
+      border: "none",
+      color: C.text,
+      fontSize: 12,
+      fontFamily: "inherit"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: doSaveSearch,
+    disabled: !srchName.trim(),
+    style: {
+      padding: "6px 14px",
+      borderRadius: 6,
+      border: `1px solid ${srchName.trim() ? C.gold : C.border}`,
+      background: srchName.trim() ? C.gold + "22" : "none",
+      color: srchName.trim() ? C.gold : C.muted,
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: srchName.trim() ? "pointer" : "default"
+    }
+  }, "Sauvegarder")), /*#__PURE__*/React.createElement("button", {
+    onClick: runScan,
+    disabled: scanning,
+    style: {
+      width: "100%",
+      padding: "15px",
+      borderRadius: 10,
+      marginBottom: 20,
+      border: `1px solid ${scanning ? C.border : C.gold + "55"}`,
+      background: scanning ? C.card : "linear-gradient(135deg,#78350f,#b45309)",
+      color: scanning ? C.muted : C.gold,
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: scanning ? "not-allowed" : "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12
+    }
+  }, scanning ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 16,
+      height: 16,
+      display: "inline-block",
+      border: `2px solid ${C.gold}33`,
+      borderTopColor: C.gold,
+      borderRadius: "50%",
+      animation: "spin .7s linear infinite"
+    }
+  }), "Scan en cours\u2026") : "🔍 Lancer le scan"), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#7c1d1d22",
+      border: "1px solid #7c1d1d",
+      borderRadius: 10,
+      padding: "12px 16px",
+      fontSize: 12,
+      color: C.red,
+      marginBottom: 16
+    }
+  }, "\u26A0\uFE0F ", error), summary && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#0f2040",
+      border: "1px solid #1e3a5f",
+      borderRadius: 10,
+      padding: "14px 16px",
+      fontSize: 12,
+      color: "#93c5fd",
+      marginBottom: 16,
+      lineHeight: 1.7,
+      animation: "fadeIn .4s ease"
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      display: "block",
+      marginBottom: 5,
+      color: C.blue
+    }
+  }, "\uD83D\uDCCA Synth\xE8se march\xE9"), summary), listings.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 12
+    }
+  }, listings.length, " BIEN", listings.length > 1 ? "S" : "", " TROUV\xC9", listings.length > 1 ? "S" : ""), listings.map((l, i) => {
+    const id = `r${i}`;
+    const open = expanded[id];
+    const heart = isCoeur(l.titre);
+    const piped = isPiped(l.titre);
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: C.card,
+        borderRadius: 12,
+        marginBottom: 10,
+        border: `1px solid ${heart ? "#ef444433" : C.border}`,
+        animation: "fadeIn .25s ease"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "14px 16px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        cursor: "pointer"
+      },
+      onClick: () => toggleExp(id)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 5,
+        marginBottom: 7,
+        alignItems: "center"
+      }
+    }, l.prix && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 17,
+        fontWeight: 800,
+        color: C.gold
+      }
+    }, l.prix), l.surface && /*#__PURE__*/React.createElement(Tag, {
+      label: l.surface,
+      color: C.blue
+    }), l.type && /*#__PURE__*/React.createElement(Tag, {
+      label: l.type,
+      color: C.purple
+    }), l.pieces && /*#__PURE__*/React.createElement(Tag, {
+      label: l.pieces,
+      color: C.cyan
+    }), l.dpe && /*#__PURE__*/React.createElement(Tag, {
+      label: `DPE ${l.dpe}`,
+      color: DPE_CLR[l.dpe] || C.orange
+    }), l.travaux && /*#__PURE__*/React.createElement(Tag, {
+      label: "Travaux \u2713",
+      color: C.green
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.text,
+        marginBottom: 3
+      }
+    }, l.titre), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted
+      }
+    }, "\uD83D\uDCCD ", l.localisation)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 5,
+        alignItems: "center",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => toggleExp(id),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.muted,
+        fontSize: 12,
+        padding: 2,
+        cursor: "pointer"
+      }
+    }, open ? "▲" : "▼"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => heart ? delCoeur(l.titre) : addCoeur(l),
+      title: heart ? "Retirer" : "Coup de cœur",
+      style: {
+        background: heart ? "#ef444422" : "none",
+        border: `1px solid ${heart ? "#ef4444" : C.border}`,
+        borderRadius: 6,
+        padding: "5px 8px",
+        fontSize: 15,
+        color: heart ? "#ef4444" : C.muted,
+        cursor: "pointer",
+        animation: heart ? "heartbeat .4s ease" : ""
+      }
+    }, heart ? "❤️" : "🤍"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => isPiped(l.titre) ? null : addPipe(l),
+      style: {
+        background: piped ? C.blue + "22" : "none",
+        border: `1px solid ${piped ? C.blue : C.border}`,
+        borderRadius: 6,
+        padding: "4px 7px",
+        fontSize: 9,
+        fontWeight: 700,
+        color: piped ? C.blue : C.muted,
+        cursor: piped ? "default" : "pointer"
+      }
+    }, piped ? "✓ Pipeliné" : "+ Pipeline")))), open && /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "0 16px 14px",
+        borderTop: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        paddingTop: 12
+      }
+    }, l.description && /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: 12,
+        color: C.sub,
+        lineHeight: 1.7,
+        marginBottom: 10
+      }
+    }, l.description), l.potentiel && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#064e3b22",
+        border: "1px solid #065f4655",
+        borderRadius: 8,
+        padding: "10px 12px",
+        fontSize: 12,
+        color: C.green,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("strong", null, "\uD83D\uDCA1 Potentiel :"), " ", l.potentiel), l.alerte && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#7c1d1d22",
+        border: "1px solid #7c1d1d55",
+        borderRadius: 8,
+        padding: "10px 12px",
+        fontSize: 12,
+        color: C.red
+      }
+    }, /*#__PURE__*/React.createElement("strong", null, "\u26A0\uFE0F Vigilance :"), " ", l.alerte), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted,
+        marginTop: 8
+      }
+    }, "Source : ", l.source))));
+  }), !scanning && listings.length === 0 && !error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "50px 20px",
+      animation: "fadeIn .3s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 52,
+      marginBottom: 14
+    }
+  }, "\uD83C\uDFE0"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.muted,
+      lineHeight: 1.9
+    }
+  }, "Configure tes crit\xE8res et lance le scan.", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.border
+    }
+  }, "19 plateformes \xB7 National")))), tab === "coeurs" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: "fadeIn .3s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap",
+      marginBottom: 16
+    }
+  }, ["Tous", ...DISPO_STATUTS].map(s => {
+    const count = s === "Tous" ? coeurs.length : coeurs.filter(c => c.disponibilite === s).length;
+    return /*#__PURE__*/React.createElement(Pill, {
+      key: s,
+      label: `${s} (${count})`,
+      color: DISPO_CLR[s] || C.gold,
+      selected: fDispo === s,
+      onClick: () => setFDispo(s)
+    });
+  })), filteredCoeurs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "50px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 12
+    }
+  }, "\uD83E\uDD0D"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.muted,
+      lineHeight: 1.8
+    }
+  }, "Aucun coup de c\u0153ur.", /*#__PURE__*/React.createElement("br", null), "Clique sur \uD83E\uDD0D depuis le scanner.")) : filteredCoeurs.map((c, i) => {
+    const days = daysSince(c.favoritedAt);
+    const autoVerif = days >= 7 && c.disponibilite === "Inconnu";
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: C.card,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        border: `1px solid ${autoVerif ? C.orange + "55" : DISPO_CLR[c.disponibilite] + "44"}`,
+        animation: "fadeIn .25s ease"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 5,
+        marginBottom: 6
+      }
+    }, c.prix && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16,
+        fontWeight: 800,
+        color: C.gold
+      }
+    }, c.prix), c.surface && /*#__PURE__*/React.createElement(Tag, {
+      label: c.surface,
+      color: C.blue
+    }), /*#__PURE__*/React.createElement(Tag, {
+      label: c.disponibilite,
+      color: DISPO_CLR[c.disponibilite]
+    }), autoVerif && /*#__PURE__*/React.createElement(Tag, {
+      label: "\u26A0\uFE0F +7 jours",
+      color: C.orange
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.text,
+        marginBottom: 3
+      }
+    }, c.titre), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginBottom: 6
+      }
+    }, "\uD83D\uDCCD ", c.localisation), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#ef4444"
+      }
+    }, "\u2764\uFE0F"), " Ajout\xE9 le ", /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: C.sub
+      }
+    }, fmtDt(c.favoritedAt)), days > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: days >= 7 ? C.orange : C.muted
+      }
+    }, " \xB7 ", days, " jour", days > 1 ? "s" : ""))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => delCoeur(c.titre),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.muted,
+        fontSize: 18,
+        cursor: "pointer",
+        paddingLeft: 8
+      }
+    }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(SL, null, "DISPONIBILIT\xC9"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5,
+        flexWrap: "wrap"
+      }
+    }, DISPO_STATUTS.map(s => /*#__PURE__*/React.createElement(Pill, {
+      key: s,
+      label: s,
+      color: DISPO_CLR[s],
+      selected: c.disponibilite === s,
+      onClick: () => updCoeur(c.titre, {
+        disponibilite: s
+      })
+    })))), /*#__PURE__*/React.createElement("textarea", {
+      value: c.note || "",
+      onChange: e => updCoeur(c.titre, {
+        note: e.target.value
+      }),
+      placeholder: "Notes personnelles...",
+      style: {
+        width: "100%",
+        height: 60,
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 7,
+        padding: "8px 10px",
+        color: C.text,
+        fontSize: 12,
+        fontFamily: "inherit",
+        resize: "vertical",
+        marginBottom: 10
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => updCoeur(c.titre, {
+        disponibilite: "À vérifier"
+      }),
+      style: {
+        padding: "7px 14px",
+        borderRadius: 6,
+        border: `1px solid ${C.orange}`,
+        background: C.orange + "22",
+        color: C.orange,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer"
+      }
+    }, "\uD83D\uDD04 \xC0 v\xE9rifier"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => updCoeur(c.titre, {
+        disponibilite: "Disponible"
+      }),
+      style: {
+        padding: "7px 14px",
+        borderRadius: 6,
+        border: `1px solid ${C.green}`,
+        background: C.green + "22",
+        color: C.green,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer"
+      }
+    }, "\u2713 Disponible"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => isPiped(c.titre) ? null : addPipe(c),
+      style: {
+        padding: "7px 14px",
+        borderRadius: 6,
+        border: `1px solid ${isPiped(c.titre) ? C.blue : C.border}`,
+        background: isPiped(c.titre) ? C.blue + "22" : "none",
+        color: isPiped(c.titre) ? C.blue : C.muted,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: isPiped(c.titre) ? "default" : "pointer"
+      }
+    }, isPiped(c.titre) ? "✓ Pipeliné" : "+ Pipeline")));
+  })), tab === "pipeline" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: "fadeIn .3s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap",
+      marginBottom: 14
+    }
+  }, ["Tous", ...PIPE_STATUTS].map(s => {
+    const count = s === "Tous" ? pipeline.length : pipeline.filter(c => c.statut === s).length;
+    return /*#__PURE__*/React.createElement(Pill, {
+      key: s,
+      label: `${s} (${count})`,
+      color: PIPE_CLR[s] || C.gold,
+      selected: fPipe === s,
+      onClick: () => setFPipe(s)
+    });
+  })), pipeline.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3,1fr)",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, [{
+    label: "Total",
+    val: pipeline.length,
+    c: C.gold
+  }, {
+    label: "À visiter",
+    val: pipeline.filter(p => p.statut === "À visiter").length,
+    c: C.blue
+  }, {
+    label: "Offres",
+    val: pipeline.filter(p => p.statut === "Offre faite").length,
+    c: C.orange
+  }].map(s => /*#__PURE__*/React.createElement("div", {
+    key: s.label,
+    style: {
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 8,
+      padding: "10px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: s.c
+    }
+  }, s.val), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      marginTop: 2
+    }
+  }, s.label)))), filteredPipe.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "50px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 12
+    }
+  }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.muted,
+      lineHeight: 1.8
+    }
+  }, "Pipeline vide.", /*#__PURE__*/React.createElement("br", null), "Ajoute des biens depuis le scanner.")) : filteredPipe.map((b, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      background: C.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 10,
+      border: `1px solid ${PIPE_CLR[b.statut] + "44"}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", null, b.prix && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: C.gold,
+      marginBottom: 4
+    }
+  }, b.prix, b.surface && ` · ${b.surface}`), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: C.text,
+      marginBottom: 2
+    }
+  }, b.titre), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted
+    }
+  }, "\uD83D\uDCCD ", b.localisation)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => delPipe(b.titre),
+    style: {
+      background: "none",
+      border: "none",
+      color: C.muted,
+      fontSize: 18,
+      paddingLeft: 8,
+      cursor: "pointer"
+    }
+  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, PIPE_STATUTS.map(s => /*#__PURE__*/React.createElement(Pill, {
+    key: s,
+    label: s,
+    color: PIPE_CLR[s],
+    selected: b.statut === s,
+    onClick: () => updPipe(b.titre, {
+      statut: s
+    })
+  }))), /*#__PURE__*/React.createElement("textarea", {
+    value: b.note || "",
+    onChange: e => updPipe(b.titre, {
+      note: e.target.value
+    }),
+    placeholder: "Notes, contacts, prochaine action...",
+    style: {
+      width: "100%",
+      height: 60,
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 7,
+      padding: "8px 10px",
+      color: C.text,
+      fontSize: 12,
+      fontFamily: "inherit",
+      resize: "vertical"
+    }
+  })))), tab === "saved" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: "fadeIn .3s ease"
+    }
+  }, searches.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "50px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 12
+    }
+  }, "\uD83D\uDD16"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.muted,
+      lineHeight: 1.8
+    }
+  }, "Aucune recherche sauvegard\xE9e.", /*#__PURE__*/React.createElement("br", null), "Configure tes crit\xE8res et clique Sauvegarder.")) : searches.map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: C.text,
+      marginBottom: 3
+    }
+  }, s.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "Sauv\xE9e le ", fmtDt(s.savedAt))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => loadSearch(s),
+    style: {
+      padding: "7px 16px",
+      borderRadius: 6,
+      border: `1px solid ${C.gold}`,
+      background: C.gold + "22",
+      color: C.gold,
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "\u25B6 Charger"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => delSearch(s.name),
+    style: {
+      padding: "7px 10px",
+      borderRadius: 6,
+      border: `1px solid ${C.border}`,
+      background: "none",
+      color: C.muted,
+      fontSize: 13,
+      cursor: "pointer"
+    }
+  }, "\xD7"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5
+    }
+  }, s.params.types.map(t => /*#__PURE__*/React.createElement(Tag, {
+    key: t,
+    label: t,
+    color: C.gold
+  })), s.params.budgetMax && /*#__PURE__*/React.createElement(Tag, {
+    label: `Max ${fmtEur(s.params.budgetMax)}`,
+    color: C.green
+  }), s.params.surfaceMin && /*#__PURE__*/React.createElement(Tag, {
+    label: `≥ ${s.params.surfaceMin} m²`,
+    color: C.blue
+  }), s.params.zones && /*#__PURE__*/React.createElement(Tag, {
+    label: `📍 ${s.params.zones}`,
+    color: C.purple
+  }), s.params.dpe.length > 0 && /*#__PURE__*/React.createElement(Tag, {
+    label: `DPE ${s.params.dpe.join("/")}`,
+    color: C.orange
+  }), /*#__PURE__*/React.createElement(Tag, {
+    label: `${s.params.plateformes.length} plateformes`,
+    color: C.muted
+  })))))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
