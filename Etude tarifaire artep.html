@@ -630,18 +630,6 @@ window.onload = function() {
       .catch(function() {});
   }
 
-
-  // Injection paramètres URL (depuis Make/email)
-  var urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('client')) document.getElementById('f-client').value = urlParams.get('client');
-  if (urlParams.get('adresse')) document.getElementById('f-adresse').value = urlParams.get('adresse');
-  if (urlParams.get('ville')) {
-    var adresse = document.getElementById('f-adresse').value;
-    document.getElementById('f-adresse').value = adresse ? adresse + ', ' + urlParams.get('ville') : urlParams.get('ville');
-  }
-  if (urlParams.get('objet')) document.getElementById('f-objet').value = urlParams.get('objet');
-  if (urlParams.get('travaux')) document.getElementById('txt').value = urlParams.get('travaux');
-
   // Fermer modal en cliquant dehors
   document.getElementById("modal-art").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
