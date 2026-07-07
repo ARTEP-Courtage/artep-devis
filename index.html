@@ -268,6 +268,15 @@ tr.tttc td:last-child{text-align:right;font-size:14px;}
           <div style="font-size:9px;color:var(--mu);opacity:.7">Mode discount = PU minimums bibliothèque</div>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;padding:7px 10px;background:var(--dk);border-radius:6px;border:1px solid var(--bd);">
+        <div id="copy-btn" onclick="toggleCopyMode()" style="width:38px;height:20px;border-radius:10px;background:var(--bd);cursor:pointer;position:relative;flex-shrink:0;transition:background .2s">
+          <div id="copy-knob" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s"></div>
+        </div>
+        <div>
+          <div id="copy-label" style="font-size:11px;font-weight:600;color:var(--mu)">Mode standard — règles ARTEP actives</div>
+          <div style="font-size:9px;color:var(--mu);opacity:.7">Mode copie = reproduction fidèle du document (prix + ordre)</div>
+        </div>
+      </div>
       <div class="note">Texte + dictée + fichiers simultanés. Bibliothèque : <span id="lib-n">123</span> articles.</div>
     </div>
   </div>
@@ -402,6 +411,7 @@ var recognition = null;
 var isRecording = false;
 var pendingFiles = [];   // déclaration unique
 var discountMode = false;
+var copyMode = false;
 
 function toggleDiscount() {
   discountMode = !discountMode;
@@ -414,6 +424,22 @@ function toggleDiscount() {
   } else {
     btn.style.background = "var(--bd)"; knob.style.left = "2px";
     lbl.style.color = "var(--mu)"; lbl.textContent = "Mode standard — PU retenus";
+  }
+}
+
+function toggleCopyMode() {
+  copyMode = !copyMode;
+  var btn  = document.getElementById("copy-btn");
+  var knob = document.getElementById("copy-knob");
+  var lbl  = document.getElementById("copy-label");
+  if (copyMode) {
+    btn.style.background = "#6b7399"; knob.style.left = "20px";
+    lbl.style.color = "#e8e8e8"; lbl.textContent = "Mode copie — reproduction fidèle";
+    // Désactiver discount si copie activée (incompatibles)
+    if (discountMode) toggleDiscount();
+  } else {
+    btn.style.background = "var(--bd)"; knob.style.left = "2px";
+    lbl.style.color = "var(--mu)"; lbl.textContent = "Mode standard — règles ARTEP actives";
   }
 }
 // (pendingFiles déclaré une seule fois ci-dessus)
@@ -603,15 +629,6 @@ window.onload = function() {
       .then(function(s) { s.getTracks().forEach(function(t) { t.stop(); }); })
       .catch(function() {});
   }
-
-  // ── INJECTION PARAMÈTRES URL (Airtable → Make → App) ──────────────────────
-  var urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("client"))  document.getElementById("f-client").value  = urlParams.get("client");
-  if (urlParams.get("adresse")) document.getElementById("f-adresse").value = urlParams.get("adresse");
-  if (urlParams.get("ville"))   document.getElementById("f-adresse").value = (document.getElementById("f-adresse").value + " " + urlParams.get("ville")).trim();
-  if (urlParams.get("objet"))   document.getElementById("f-objet").value   = urlParams.get("objet");
-  if (urlParams.get("travaux")) document.getElementById("txt").value       = urlParams.get("travaux");
-  // ── FIN INJECTION ──────────────────────────────────────────────────────────
 
   // Fermer modal en cliquant dehors
   document.getElementById("modal-art").addEventListener("click", function(e) {
@@ -900,14 +917,34 @@ function generer() {
     .map(function(f){return "\n=== FICHIER : " + f.name + " ===\n" + f.textContent;}).join("\n");
   var hasImages = pendingFiles.filter(function(f){return f.type === "image";}).length > 0;
 
-  var promptText = "Tu es le générateur d'études tarifaires pour ARTEP Courtage Travaux.\n"
-    + "Analyse TOUTES les informations fournies (texte, dictée, fichiers, photos) et génère une étude tarifaire complète.\n\n"
-    + "BIBLIOTHÈQUE ARTEP (" + library.length + " articles) :\n" + libStr + "\n\n"
-    + (textInput ? "DESCRIPTION / DICTÉE :\n" + textInput + "\n" : "")
-    + (fileTexts ? fileTexts + "\n" : "")
-    + (hasImages ? "\nDes photos sont jointes — analyse-les pour identifier travaux, dimensions, état existant.\n" : "")
-    + "\nPRINCIPE FONDAMENTAL — INFÉRENCE INTELLIGENTE :\n"
-    + "Tu es un expert en rénovation immobilière. Tu génères TOUT ce qui est logiquement nécessaire, même si non mentionné explicitement. Si une SDB est créée : peinture obligatoire. Si carrelage posé : ragréage + seuils de portes nécessaires. Si plomberie refaite : coffrage BA13 requis. Raisonne comme un conducteur de travaux expérimenté.\n\n"
+  var promptText;
+
+  if (copyMode) {
+    // ── MODE COPIE : reproduction fidèle, aucune règle ARTEP ──────────────────
+    promptText = "Tu es un assistant de reproduction de documents.\n"
+      + "MISSION UNIQUE : reproduire FIDÈLEMENT et INTÉGRALEMENT le document fourni.\n\n"
+      + (textInput ? "INSTRUCTIONS COMPLÉMENTAIRES :\n" + textInput + "\n\n" : "")
+      + (fileTexts ? fileTexts + "\n\n" : "")
+      + "RÈGLES ABSOLUES EN MODE COPIE :\n"
+      + "1. Reproduire EXACTEMENT l'ordre des lots tel qu'il apparaît dans le document\n"
+      + "2. Reproduire EXACTEMENT toutes les désignations sans modification\n"
+      + "3. Reproduire EXACTEMENT tous les prix (pu_ht) tels qu'ils figurent dans le document. Si un prix n'est pas lisible : null.\n"
+      + "4. Reproduire EXACTEMENT les quantités et unités\n"
+      + "5. NE PAS ajouter de prestations non présentes dans le document\n"
+      + "6. NE PAS réorganiser les lots\n"
+      + "7. NE PAS appliquer de règles ARTEP (pas d'associations automatiques, pas d'ordre imposé)\n\n"
+      + "JSON UNIQUEMENT sans backticks :\n"
+      + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"...\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":null}]}]}";
+  } else {
+    // ── MODE STANDARD : génération avec règles ARTEP ──────────────────────────
+    promptText = "Tu es le générateur d'études tarifaires pour ARTEP Courtage Travaux.\n"
+      + "Analyse TOUTES les informations fournies (texte, dictée, fichiers, photos) et génère une étude tarifaire complète.\n\n"
+      + "BIBLIOTHÈQUE ARTEP (" + library.length + " articles) :\n" + libStr + "\n\n"
+      + (textInput ? "DESCRIPTION / DICTÉE :\n" + textInput + "\n" : "")
+      + (fileTexts ? fileTexts + "\n" : "")
+      + (hasImages ? "\nDes photos sont jointes — analyse-les pour identifier travaux, dimensions, état existant.\n" : "")
+      + "\nPRINCIPE FONDAMENTAL — INFÉRENCE INTELLIGENTE :\n"
+      + "Tu es un expert en rénovation immobilière. Tu génères TOUT ce qui est logiquement nécessaire, même si non mentionné explicitement. Si une SDB est créée : peinture obligatoire. Si carrelage posé : ragréage + seuils de portes nécessaires. Si plomberie refaite : coffrage BA13 requis. Raisonne comme un conducteur de travaux expérimenté.\n\n"
     + "ORDRE DES LOTS — TOUJOURS RESPECTER CET ORDRE :\n"
     + "   LOT 1 — DÉMOLITION / DÉPOSE\n"
     + "   LOT 2 — PLOMBERIE / SANITAIRE\n"
@@ -930,12 +967,13 @@ function generer() {
     + "- PLÂTRERIE : si plomberie ou démolition → prévoir reprises plâtres et coffrages\n"
     + "- PEINTURE LOT 6 : UNE SEULE LIGNE regroupant murs ET plafonds. OBLIGATOIRE : 'Rebouchage, ponçage et époussetage, enduit gros et fin, couche d\'impression, 2 couches peinture finition TOLLENS ou équiv. — Plafonds BLANC MAT / Murs BLANC SATINÉ. Peinture spéciale humidité pièces d\'eau. Portes intérieures comprises.' — Quantité = surfaces murs + plafonds cumulées en m². INTERDIT de créer une ligne séparée pour les murs et une autre pour les plafonds. INTERDIT de dupliquer si déjà présent dans un autre lot.\n"
     + "- GROS OEUVRE : si mur porteur, IPN, parpaings, dalle béton → créer LOT GROS OEUVRE / MAÇONNERIE inséré AVANT LOT PLOMBERIE\n\n"
-    + "- UNE SEULE ligne \'Approvisionnement + protection chantier + nettoyage\' — Forfait ref DIV-002\n"
-    + "- Paris uniquement : ajouter \'Stationnement Paris\' ref DIV-007\n"
-    + "- Ne jamais générer \'livraison matériaux\' sauf demande explicite\n\n"
+    + "- UNE SEULE ligne 'Approvisionnement + protection chantier + nettoyage' — Forfait ref DIV-002\n"
+    + "- Paris uniquement : ajouter 'Stationnement Paris' ref DIV-007\n"
+    + "- Ne jamais générer 'livraison matériaux' sauf demande explicite\n\n"
     + "VÉRIFICATION AVANT JSON : ordre lots OK, pas de doublons, une seule protection chantier, +11% carrelages, seuils portes, coffrages BA13, peinture avec rebouchage+ponçage+époussetage. Puis JSON uniquement.\n\n"
     + "JSON UNIQUEMENT sans backticks, sans texte avant ou après :\n"
     + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"DÉMOLITION / DÉPOSE\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":\"DEP-001\"}]}]}";
+  } // fin else mode standard
 
   var msgContent = [];
   pendingFiles.filter(function(f){return f.type==="image";}).forEach(function(f) {
@@ -1003,115 +1041,92 @@ function generer() {
       if (!parsed) throw new Error("Réponse trop longue — réduisez le nombre de fichiers ou la description");
     }
 
-    // ── Injection des PU depuis la bibliothèque ───────────────────────────────
-    var libByRef = {};
-    library.forEach(function(a) { if (a.ref) libByRef[a.ref] = a; });
-
-    // Index mots-clés pour matching de secours
-    function scoreMatch(article, description) {
-      var desc = (description || "").toLowerCase();
-      var des  = (article.des || "").toLowerCase();
-      var score = 0;
-      var words = des.split(/\s+/).filter(function(w) { return w.length > 4; });
-      words.forEach(function(w) { if (desc.indexOf(w) !== -1) score++; });
-      return score;
-    }
-
-    var matched = 0, fallback = 0, unmatched = 0;
-    parsed.lots.forEach(function(lot) {
-      if (!lot.lignes) return;
-      lot.lignes.forEach(function(l) {
-        var art = null;
-        // 1. Correspondance exacte par ref
-        if (l.ref && libByRef[l.ref]) {
-          art = libByRef[l.ref];
-          matched++;
-        } else {
-          // 2. Recherche par mots-clés de secours
-          var best = null, bestScore = 0;
-          library.forEach(function(a) {
-            var s = scoreMatch(a, l.description);
-            if (s > bestScore && s >= 3) { bestScore = s; best = a; }
-          });
-          if (best) { art = best; fallback++; }
-          else { unmatched++; }
-        }
-        // Injection prix selon mode (standard = ret, discount = min)
-        // Vérification stricte pour compatibilité avec anciennes bibliothèques localStorage
-        if (art) {
-          var retVal = (typeof art.ret === 'number' && art.ret > 0) ? art.ret : null;
-          var minVal = (typeof art.min === 'number' && art.min > 0) ? art.min : null;
-          if (discountMode) {
-            l.pu_ht = (minVal !== null) ? minVal : retVal;
-          } else {
-            l.pu_ht = retVal;
-          }
-        } else {
-          l.pu_ht = null;
-        }
-      });
-    });
-    // ── Fin injection prix ────────────────────────────────────────────────────
-    var LOT_ORDER = [
-      "DÉMOLITION","DÉPOSE","PLOMBERIE","SANITAIRE",
-      "ÉLECTRICITÉ","ELECTRICITE","PLÂTRERIE","PLATRERIE","CLOISON",
-      "CARRELAGE","ÉTANCHÉITÉ","ETANCHEITE","PEINTURE","DIVERS"
-    ];
-    function lotPriority(intitule) {
-      var u = (intitule||"").toUpperCase();
-      if (u.indexOf("DÉMOL") !== -1 || u.indexOf("DEMOL") !== -1 || u.indexOf("DÉPOS") !== -1 || u.indexOf("DEPOS") !== -1) return 1;
-      if (u.indexOf("PLOMB") !== -1 || u.indexOf("SANIT") !== -1) return 2;
-      if (u.indexOf("ÉLEC") !== -1 || u.indexOf("ELEC") !== -1) return 3;
-      if (u.indexOf("PLÂT") !== -1 || u.indexOf("PLAT") !== -1 || u.indexOf("CLOIS") !== -1) return 4;
-      if (u.indexOf("CARREL") !== -1 || u.indexOf("ÉTANCH") !== -1 || u.indexOf("ETANCH") !== -1 || u.indexOf("FAÏEN") !== -1 || u.indexOf("FAIEN") !== -1) return 5;
-      if (u.indexOf("PEINTUR") !== -1 || u.indexOf("ENDUIT") !== -1) return 6;
-      if (u.indexOf("DIVERS") !== -1) return 99;
-      return 50; // corps de métier non listé → avant DIVERS
-    }
-    parsed.lots.sort(function(a, b) { return lotPriority(a.intitule) - lotPriority(b.intitule); });
-
-    // ── Renumérotation des lots après tri ─────────────────────────────────────
-    parsed.lots.forEach(function(lot, lotIdx) {
-      lot.nom = "LOT " + (lotIdx + 1);
-      if (lot.lignes) {
-        lot.lignes.forEach(function(l, lineIdx) {
-          l.numero = (lotIdx + 1) + "." + (lineIdx + 1);
-        });
+    // ── Post-traitement (désactivé en Mode Copie) ────────────────────────────
+    if (!copyMode) {
+      // Injection des PU depuis la bibliothèque
+      var libByRef = {};
+      library.forEach(function(a) { if (a.ref) libByRef[a.ref] = a; });
+      function scoreMatch(article, description) {
+        var desc = (description || "").toLowerCase();
+        var des  = (article.des || "").toLowerCase();
+        var score = 0;
+        var words = des.split(/\s+/).filter(function(w) { return w.length > 4; });
+        words.forEach(function(w) { if (desc.indexOf(w) !== -1) score++; });
+        return score;
       }
-    });
-
-    // ── Déduplication dans LOT DIVERS ─────────────────────────────────────────
-    parsed.lots.forEach(function(lot) {
-      if (!lot.lignes) return;
-      var u = (lot.intitule||"").toUpperCase();
-      if (u.indexOf("DIVERS") === -1) return;
-      // Supprimer les doublons protection/nettoyage (garder 1 seule)
-      var protCount = 0;
-      lot.lignes = lot.lignes.filter(function(l) {
-        var d = (l.description||"").toUpperCase();
-        var isProtection = d.indexOf("PROTECTION") !== -1 || d.indexOf("NETTOYAGE") !== -1 || d.indexOf("APPROVISIONNEMENT") !== -1;
-        if (isProtection) { protCount++; return protCount <= 1; }
-        // Supprimer lignes livraison sauf si ref DIV-003 explicitement demandé
-        var isLivraison = d.indexOf("LIVRAISON") !== -1 && d.indexOf("MATÉRIAUX") !== -1;
-        if (isLivraison) return false;
-        return true;
+      var matched = 0, fallback = 0, unmatched = 0;
+      parsed.lots.forEach(function(lot) {
+        if (!lot.lignes) return;
+        lot.lignes.forEach(function(l) {
+          var art = null;
+          if (l.ref && libByRef[l.ref]) { art = libByRef[l.ref]; matched++; }
+          else {
+            var best = null, bestScore = 0;
+            library.forEach(function(a) {
+              var s = scoreMatch(a, l.description);
+              if (s > bestScore && s >= 3) { bestScore = s; best = a; }
+            });
+            if (best) { art = best; fallback++; } else { unmatched++; }
+          }
+          if (art) {
+            var retVal = (typeof art.ret === 'number' && art.ret > 0) ? art.ret : null;
+            var minVal = (typeof art.min === 'number' && art.min > 0) ? art.min : null;
+            l.pu_ht = discountMode ? (minVal !== null ? minVal : retVal) : retVal;
+          } else { l.pu_ht = null; }
+        });
       });
-    });
 
-    parsed.lots.forEach(function(lot) {
-      if (!lot.lignes) return;
-      lot.lignes.forEach(function(l) {
-        if (l.ref && libByRef[l.ref] && libByRef[l.ref].ret != null) {
-          l.pu_ht = libByRef[l.ref].ret;
-          matched++;
-        } else {
-          l.pu_ht = null;
-          unmatched++;
-        }
+      // Tri des lots dans l'ordre ARTEP
+      function lotPriority(intitule) {
+        var u = (intitule||"").toUpperCase();
+        if (u.indexOf("DÉMOL")!==-1||u.indexOf("DEMOL")!==-1||u.indexOf("DÉPOS")!==-1||u.indexOf("DEPOS")!==-1) return 1;
+        if (u.indexOf("PLOMB")!==-1||u.indexOf("SANIT")!==-1) return 2;
+        if (u.indexOf("ÉLEC")!==-1||u.indexOf("ELEC")!==-1) return 3;
+        if (u.indexOf("PLÂT")!==-1||u.indexOf("PLAT")!==-1||u.indexOf("CLOIS")!==-1) return 4;
+        if (u.indexOf("CARREL")!==-1||u.indexOf("ÉTANCH")!==-1||u.indexOf("ETANCH")!==-1) return 5;
+        if (u.indexOf("PEINTUR")!==-1||u.indexOf("ENDUIT")!==-1) return 6;
+        if (u.indexOf("DIVERS")!==-1) return 99;
+        return 50;
+      }
+      parsed.lots.sort(function(a,b){ return lotPriority(a.intitule)-lotPriority(b.intitule); });
+
+      // Renumérotation après tri
+      parsed.lots.forEach(function(lot,li){
+        lot.nom = "LOT "+(li+1);
+        if (lot.lignes) lot.lignes.forEach(function(l,li2){ l.numero=(li+1)+"."+(li2+1); });
       });
-    });
+
+      // Déduplication LOT DIVERS
+      parsed.lots.forEach(function(lot) {
+        if (!lot.lignes) return;
+        if ((lot.intitule||"").toUpperCase().indexOf("DIVERS")===-1) return;
+        var protCount=0;
+        lot.lignes = lot.lignes.filter(function(l){
+          var d=(l.description||"").toUpperCase();
+          var isProt=d.indexOf("PROTECTION")!==-1||d.indexOf("NETTOYAGE")!==-1||d.indexOf("APPROVISIONNEMENT")!==-1;
+          if(isProt){protCount++;return protCount<=1;}
+          if(d.indexOf("LIVRAISON")!==-1&&d.indexOf("MATÉRIAUX")!==-1)return false;
+          return true;
+        });
+      });
+
+      var msg = "Étude générée — "+parsed.lots.length+" lots — "+matched+" prix directs";
+      if (fallback>0) msg += " + "+fallback+" approchés";
+      if (unmatched>0) msg += " — "+unmatched+" à compléter";
+      if (discountMode) msg += " 🏷️ DISCOUNT";
+      toast(msg);
+
+    } else {
+      // Mode Copie : on conserve tout tel quel, juste renuméroter proprement
+      parsed.lots.forEach(function(lot,li){
+        lot.nom = lot.nom || ("LOT "+(li+1));
+        if (lot.lignes) lot.lignes.forEach(function(l,li2){
+          if (!l.numero) l.numero=(li+1)+"."+(li2+1);
+        });
+      });
+      toast("Mode Copie — "+parsed.lots.length+" lots reproduits fidèlement 📋");
+    }
     // ── Fin post-traitement ───────────────────────────────────────────────────
-
     var cfg = getCfg();
     currentDevis = {
       numero: document.getElementById("f-num").value || genNumero(),
@@ -1215,6 +1230,38 @@ function renderPreview(d) {
     + "<div class=\"ptit\">CONDITION DE RÈGLEMENT SUR MESURE NON CONTRACTUELLE</div>"
     + "<div style=\"font-size:9px;color:#444;line-height:1.8\">• " + pay1 + "<br>• " + pay2 + "<br>• " + pay3 + "</div>"
     + "<div style=\"font-size:8px;color:#777;margin-top:8px;font-style:italic\">Document non contractuel - valable 30 jours. TVA 10% pour travaux rénovation logement achevé depuis + de 2 ans (Art. 279-0 bis CGI).</div>"
+    + "</div>"
+    + "<div style=\"padding:14px 20px;background:#F4F4F4;border-top:2px solid #24364D\">"
+    + "<div style=\"font-size:11px;font-weight:800;color:#24364D;text-transform:uppercase;margin-bottom:2px\">✓ Assistance Essentielle (Incluse)</div>"
+    + "<div style=\"font-size:8.5px;color:#555;font-style:italic;margin-bottom:6px\">Ce service est automatiquement compris dans votre projet. Il vous garantit un accompagnement complet jusqu'à la signature du contrat de travaux :</div>"
+    + ["Sélection d'entreprises qualifiées et assurées.",
+       "Vérification des devis et analyse technique avant engagement.",
+       "Négociation des prix pour un budget optimisé.",
+       "Vérification des assurances et conformité administrative.",
+       "Coordination et suivi administratif jusqu'à la contractualisation."
+      ].map(function(line){
+        return "<div style=\"font-size:9px;color:#222;font-weight:600;padding:3px 0 3px 16px;border-left:3px solid #24364D;margin-bottom:3px;background:#fff\">" + line + "</div>";
+      }).join("")
+    + "<div style=\"font-size:11px;font-weight:800;color:#C4620A;text-transform:uppercase;margin:12px 0 2px\">+ Option Assistance Sérénité <span style=\"font-weight:400;font-size:9px\">(AMO — à partir de 600€)</span></div>"
+    + "<div style=\"font-size:8.5px;color:#555;font-style:italic;margin-bottom:6px\">Ce que l'AMO ajoute au courtage :</div>"
+    + ["Assistance à la mise au point technique des travaux avant démarrage.",
+       "Rédaction du planning travaux.",
+       "Présence ARTEP sur chantier aux moments clés.",
+       "Vérification du respect du planning et de la cohérence des travaux.",
+       "Analyse et avis sur tout avenant ou modification.",
+       "Accompagnement à la réception jusqu'à la levée des réserves."
+      ].map(function(line){
+        return "<div style=\"font-size:9px;color:#222;font-weight:600;padding:3px 0 3px 16px;border-left:3px solid #C4620A;margin-bottom:3px;background:#fff\">" + line + "</div>";
+      }).join("")
+    + "<div style=\"font-size:8.5px;color:#555;font-style:italic;margin:8px 0 4px\">Vos bénéfices :</div>"
+    + ["Continuité de suivi après signature du contrat.",
+       "Anticipation des risques et meilleure maîtrise du budget.",
+       "Réception encadrée et accompagnement jusqu'à la fin du chantier.",
+       "Regard impartial, exclusivement au service de vos intérêts."
+      ].map(function(line){
+        return "<div style=\"font-size:9px;color:#222;font-weight:600;padding:3px 0 3px 16px;border-left:3px solid #C4620A;margin-bottom:3px;background:#fff\">" + line + "</div>";
+      }).join("")
+    + "</div>"
     + "<div class=\"dfoot\" style=\"background:#24364D\">ARTEP COURTAGE TRAVAUX  |  " + tel + "  |  " + email + "  |  " + web + "</div>"
     + "</div></div>";
   document.getElementById("preview").innerHTML = html;
@@ -1513,6 +1560,95 @@ async function exportExcel() {
       ws.getRow(rn).height = isDocLine ? 30 : 14;
     }
     rn++;
+  });
+
+  // ── ASSISTANCE ESSENTIELLE / AMO SÉRÉNITÉ ─────────────
+  rn++;
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).fill = sf(CN); ws.getRow(rn).height = 2; rn++;
+
+  // Titre Assistance Essentielle
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).value = "✓ ASSISTANCE ESSENTIELLE (INCLUSE)";
+  sc(ws.getCell("A"+rn), fn(true,10,CN), sf(CG), al("left"));
+  ws.getRow(rn).height = 20; rn++;
+
+  // Sous-titre intro
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).value = "Ce service est automatiquement compris dans votre projet. Il vous garantit un accompagnement complet jusqu'à la signature du contrat de travaux :";
+  sc(ws.getCell("A"+rn), fn(false,8,C3,true), sf(CW), al("left","middle",true), bH());
+  ws.getRow(rn).height = 26; rn++;
+
+  // Une ligne par avantage — Assistance Essentielle
+  [
+    "Sélection d'entreprises qualifiées et assurées.",
+    "Vérification des devis et analyse technique avant engagement.",
+    "Négociation des prix pour un budget optimisé.",
+    "Vérification des assurances et conformité administrative.",
+    "Coordination et suivi administratif jusqu'à la contractualisation."
+  ].forEach(function(line) {
+    ws.mergeCells("A"+rn+":F"+rn);
+    ws.getCell("A"+rn).value = "▸  "+line;
+    sc(ws.getCell("A"+rn), fn(true,9,CN), sf(CW), al("left","middle",true), {
+      top:{style:"thin",color:{argb:"FFE0E0E0"}}, left:{style:"medium",color:{argb:"FF24364D"}},
+      bottom:{style:"thin",color:{argb:"FFE0E0E0"}}, right:{style:"thin",color:{argb:"FFE0E0E0"}}
+    });
+    ws.getRow(rn).height = 18; rn++;
+  });
+
+  // Espacement
+  rn++;
+
+  // Titre Option AMO Sérénité
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).value = "+ OPTION ASSISTANCE SÉRÉNITÉ  (AMO — À PARTIR DE 600€)";
+  sc(ws.getCell("A"+rn), fn(true,10,CW), sf(CO), al("left"));
+  ws.getRow(rn).height = 20; rn++;
+
+  // Sous-titre AMO
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).value = "Ce que l'AMO ajoute au courtage :";
+  sc(ws.getCell("A"+rn), fn(false,8,C3,true), sf(CW), al("left","middle",true), bH());
+  ws.getRow(rn).height = 16; rn++;
+
+  // Une ligne par avantage — Ce que l'AMO ajoute
+  [
+    "Assistance à la mise au point technique des travaux avant démarrage.",
+    "Rédaction du planning travaux.",
+    "Présence ARTEP sur chantier aux moments clés.",
+    "Vérification du respect du planning et de la cohérence des travaux.",
+    "Analyse et avis sur tout avenant ou modification.",
+    "Accompagnement à la réception jusqu'à la levée des réserves."
+  ].forEach(function(line) {
+    ws.mergeCells("A"+rn+":F"+rn);
+    ws.getCell("A"+rn).value = "▸  "+line;
+    sc(ws.getCell("A"+rn), fn(true,9,CN), sf(CW), al("left","middle",true), {
+      top:{style:"thin",color:{argb:"FFE0E0E0"}}, left:{style:"medium",color:{argb:"FFC4620A"}},
+      bottom:{style:"thin",color:{argb:"FFE0E0E0"}}, right:{style:"thin",color:{argb:"FFE0E0E0"}}
+    });
+    ws.getRow(rn).height = 18; rn++;
+  });
+
+  // Sous-titre Bénéfices
+  ws.mergeCells("A"+rn+":F"+rn);
+  ws.getCell("A"+rn).value = "Vos bénéfices :";
+  sc(ws.getCell("A"+rn), fn(false,8,C3,true), sf(CW), al("left","middle",true), bH());
+  ws.getRow(rn).height = 16; rn++;
+
+  // Une ligne par bénéfice
+  [
+    "Continuité de suivi après signature du contrat.",
+    "Anticipation des risques et meilleure maîtrise du budget.",
+    "Réception encadrée et accompagnement jusqu'à la fin du chantier.",
+    "Regard impartial, exclusivement au service de vos intérêts."
+  ].forEach(function(line) {
+    ws.mergeCells("A"+rn+":F"+rn);
+    ws.getCell("A"+rn).value = "▸  "+line;
+    sc(ws.getCell("A"+rn), fn(true,9,CN), sf(CW), al("left","middle",true), {
+      top:{style:"thin",color:{argb:"FFE0E0E0"}}, left:{style:"medium",color:{argb:"FFC4620A"}},
+      bottom:{style:"thin",color:{argb:"FFE0E0E0"}}, right:{style:"thin",color:{argb:"FFE0E0E0"}}
+    });
+    ws.getRow(rn).height = 18; rn++;
   });
 
   // ── PIED DE PAGE ─────────────────────────────────────
