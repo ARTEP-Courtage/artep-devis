@@ -630,18 +630,6 @@ window.onload = function() {
       .catch(function() {});
   }
 
-
-  // Injection paramètres URL (depuis Make/CRM)
-  var urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('client')) document.getElementById('f-client').value = urlParams.get('client');
-  if (urlParams.get('adresse')) document.getElementById('f-adresse').value = urlParams.get('adresse');
-  if (urlParams.get('ville')) {
-    var adresse = document.getElementById('f-adresse').value;
-    document.getElementById('f-adresse').value = adresse ? adresse + ', ' + urlParams.get('ville') : urlParams.get('ville');
-  }
-  if (urlParams.get('objet')) document.getElementById('f-objet').value = urlParams.get('objet');
-  if (urlParams.get('travaux')) document.getElementById('txt').value = urlParams.get('travaux');
-
   // Fermer modal en cliquant dehors
   document.getElementById("modal-art").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
@@ -968,23 +956,34 @@ function generer() {
     + "Générer uniquement les lots réellement concernés — mais inférer intelligemment ce qui est nécessaire même si non mentionné.\n\n"
     + "RÈGLES ABSOLUES :\n"
     + "1. Descriptions professionnelles style \'Four. et pose...\'. Jamais de calculs dans la description.\n"
-    + "2. PU HT = null. Inclure le champ \'ref\' avec la référence bibliothèque exacte. Si aucune correspondance : ref = null.\n"
+    + "2. Si la prestation correspond à un article de la bibliothèque : PU HT = null, champ \'ref\' = référence exacte, \'nouveau\' = false.\n"
     + "3. Numérotation : 1.1, 1.2... selon l\'ordre réel des lots.\n\n"
+    + "PRESTATIONS HORS BIBLIOTHÈQUE — CHIFFRAGE OBLIGATOIRE :\n"
+    + "Si une prestation nécessaire n\'a AUCUNE correspondance dans la bibliothèque ci-dessus : ne la laisse JAMAIS sans prix. Utilise l\'outil de recherche web pour trouver un prix réaliste fourniture + pose, marché France / Île-de-France actuel. Dans ce cas précis, et uniquement celui-ci :\n"
+    + "   \"ref\": null, \"nouveau\": true, \"pu_ht\": <prix HT estimé, nombre, jamais null>, \"ref_propose\": \"<3 lettres catégorie>-<numéro>\" (ex: \'ELE-042\', cohérent avec la nomenclature ARTEP existante).\n"
+    + "Choisis l\'unité la plus pertinente : m², ml, u ou forfait. Exemple : {\"numero\":\"3.4\",\"description\":\"Four. et pose garde-corps aluminium\",\"unite\":\"ml\",\"quantite\":4,\"pu_ht\":180,\"ref\":null,\"nouveau\":true,\"ref_propose\":\"DIV-042\"}\n"
+    + "APPAREILS SANITAIRES (receveur, WC, vasque, robinetterie, ballon eau chaude, colonne de douche...) et VMC/VMR — prestations nouvelles uniquement (hors bibliothèque) : la description DOIT citer la marque et le modèle exact de l\'appareil retenu (trouvés via la recherche web). N\'indique un prix public TTC dans la description QUE si tu as pu le vérifier réellement via la recherche web (prix constructeur ou distributeur confirmé par une source) — si aucun prix public fiable n\'est trouvé, ne mentionne aucun prix public dans la description ; le pu_ht reste ton estimation chiffrée normalement.\n\n"
     + "AUTOMATISMES OBLIGATOIRES :\n"
+    + "- LOT DÉMOLITION/DÉPOSE : l'évacuation des gravats est couverte par UNE SEULE ligne finale du lot (ref DEP-008 'Évacuation gravats en déchetterie agréée'). Sur TOUTES les autres lignes de dépose, n'écris JAMAIS 'évacuation comprise' ni formulation équivalente — décris uniquement l'opération de dépose elle-même.\n"
+    + "- RADIATEURS ÉLECTRIQUES, SÈCHE-SERVIETTES ÉLECTRIQUES, VMC, VMR et tout équipement électrique : toujours en LOT ÉLECTRICITÉ, jamais dans un autre lot (même si mentionnés à côté d'un poste plomberie ou plâtrerie dans la description).\n"
     + "- CARRELAGE / FAÏENCE : surfaces + 11% pour chutes/découpes (10m² → 11.1)\n"
     + "- CARRELAGE SOL : ajouter \'Four. & pose seuil de porte aluminium anodisé\' ref DIV-004 — 1u par porte (0.70ml)\n"
+    + "- PRIX CARRELAGE PAR DÉFAUT : si la description du chantier ne précise pas de marque, modèle, gamme ou prix pour le carrelage/faïence à poser, NE cherche PAS de correspondance bibliothèque pour la ligne fourniture+pose — fixe toi-même : \"ref\":null, \"nouveau\":false, \"prix_defaut\":true, carrelage SOL = 22.73€ HT/m² (25€ TTC), faïence MUR = 20€ HT/m² (22€ TTC). AUCUNE marque ni modèle pour le carrelage — précise en revanche dans la description la fourchette de format : carrelage SOL 'format entre 25x25 cm et 60x60 cm selon choix client', faïence MUR 'format entre 20x20 cm et 30x60 cm selon choix client'. Si la description précise un modèle/gamme/prix différent, utilise plutôt la référence bibliothèque correspondante si elle existe (et ne mets pas \"prix_defaut\").\n"
     + "- PLOMBERIE avec douche/receveur/baignoire : LOT 2 → colonne douche thermostatique (ref SAN-009, jamais encastré) + LOT 4 → \'Coffrage BA13 hydrofugé — passage plomberie EF/EC mitigeur\' ref PLA-006\n"
     + "- VASQUE / LAVABO / MEUBLE VASQUE : LOT 2 → mitigeur vasque Grohe Bau Loop ref SAN-007\n"
     + "- INTERDIT : jamais mitigeur thermostatique encastré\n"
+    + "- LOT PLOMBERIE — DESCRIPTIONS DÉTAILLÉES OBLIGATOIRES : chaque ligne de plomberie doit préciser le type d'alimentation eau froide/eau chaude (multicouche ou PER) et le diamètre d'évacuation PVC adapté à l'appareil concerné : Ø100 pour WC, Ø40 pour évier/lavabo/vasque, Ø32 pour lave-vaisselle/lave-linge. Ne jamais se contenter d'une formulation générique comme 'travaux de plomberie pour...' sans ces précisions techniques.\n"
+    + "- APPAREILLAGE ÉLECTRIQUE (prises, interrupteurs, va-et-vient) : ajouter UNE SEULE ligne récapitulative dans le LOT ÉLECTRICITÉ précisant la marque et la gamme retenues pour l'ensemble de l'appareillage du chantier. Par défaut, sauf marque/gamme explicitement mentionnée dans la description : Schneider Electric, gamme Ovalis, coloris blanc.\n"
     + "- PLÂTRERIE : si plomberie ou démolition → prévoir reprises plâtres et coffrages\n"
     + "- PEINTURE LOT 6 : UNE SEULE LIGNE regroupant murs ET plafonds. OBLIGATOIRE : 'Rebouchage, ponçage et époussetage, enduit gros et fin, couche d\'impression, 2 couches peinture finition TOLLENS ou équiv. — Plafonds BLANC MAT / Murs BLANC SATINÉ. Peinture spéciale humidité pièces d\'eau. Portes intérieures comprises.' — Quantité = surfaces murs + plafonds cumulées en m². INTERDIT de créer une ligne séparée pour les murs et une autre pour les plafonds. INTERDIT de dupliquer si déjà présent dans un autre lot.\n"
     + "- GROS OEUVRE : si mur porteur, IPN, parpaings, dalle béton → créer LOT GROS OEUVRE / MAÇONNERIE inséré AVANT LOT PLOMBERIE\n\n"
     + "- UNE SEULE ligne 'Approvisionnement + protection chantier + nettoyage' — Forfait ref DIV-002\n"
     + "- Paris uniquement : ajouter 'Stationnement Paris' ref DIV-007\n"
     + "- Ne jamais générer 'livraison matériaux' sauf demande explicite\n\n"
-    + "VÉRIFICATION AVANT JSON : ordre lots OK, pas de doublons, une seule protection chantier, +11% carrelages, seuils portes, coffrages BA13, peinture avec rebouchage+ponçage+époussetage. Puis JSON uniquement.\n\n"
+    + "VÉRIFICATION AVANT JSON : ordre lots OK, pas de doublons, une seule protection chantier, +11% carrelages, seuils portes, coffrages BA13, peinture avec rebouchage+ponçage+époussetage, pas d'\'évacuation comprise\' hors ligne finale dépose, radiateurs/VMC en lot électricité, prix carrelage par défaut appliqué si non précisé, plomberie détaillée (alimentation + diamètres), ligne marque appareillage électrique. Puis JSON uniquement.\n\n"
+    + "IMPORTANT : même si tu utilises la recherche web pour chiffrer une prestation, ne commente JAMAIS tes recherches dans ta réponse finale. Aucun texte, aucune explication, aucune citation visible avant, pendant ou après le JSON — uniquement le JSON.\n\n"
     + "JSON UNIQUEMENT sans backticks, sans texte avant ou après :\n"
-    + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"DÉMOLITION / DÉPOSE\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":\"DEP-001\"}]}]}";
+    + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"DÉMOLITION / DÉPOSE\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":\"DEP-001\",\"nouveau\":false,\"prix_defaut\":false}]}]}";
   } // fin else mode standard
 
   var msgContent = [];
@@ -1002,9 +1001,10 @@ function generer() {
       "anthropic-dangerous-direct-browser-access": "true"
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 16000,
-      messages: [{role:"user", content:msgContent}]
+      model: "claude-opus-4-8",
+      max_tokens: 128000,
+      messages: [{role:"user", content:msgContent}],
+      tools: copyMode ? undefined : [{type:"web_search_20250305", name:"web_search", max_uses:5}]
     })
   }).then(function(res) {
     return res.json().then(function(data) {
@@ -1012,7 +1012,8 @@ function generer() {
       return data;
     });
   }).then(function(data) {
-    var raw = data.content[0].text.trim()
+    var textBlocks = (data.content || []).filter(function(b){return b.type === "text";}).map(function(b){return b.text;});
+    var raw = textBlocks.join("\n").trim()
       .replace(/^```json\s*/,"").replace(/^```\s*/,"").replace(/\s*```$/,"");
 
     // Extraction robuste du JSON même si la réponse est tronquée
@@ -1020,10 +1021,17 @@ function generer() {
     try {
       parsed = JSON.parse(raw);
     } catch(e1) {
-      // Tenter d'extraire le JSON entre { et la dernière } ou ] valide
       var start = raw.indexOf("{");
       if (start === -1) throw new Error("Réponse invalide — réessayez avec moins de contenu");
-      // Fermer le JSON tronqué proprement
+
+      // Tentative 1 : JSON complet mais entouré de texte parasite (commentaires, citations web...)
+      var lastBrace = raw.lastIndexOf("}");
+      if (lastBrace > start) {
+        try { parsed = JSON.parse(raw.substring(start, lastBrace + 1)); } catch(eTrim) { /* pas ce cas, on continue */ }
+      }
+
+      if (!parsed) {
+      // Tentative 2 : réponse réellement tronquée — fermer le JSON proprement
       var partial = raw.substring(start);
       // Compter les accolades/crochets ouverts et fermer
       var opens = 0, closes = 0, sqOpens = 0, sqCloses = 0;
@@ -1051,6 +1059,7 @@ function generer() {
         catch(e2) { lines.pop(); }
       }
       if (!parsed) throw new Error("Réponse trop longue — réduisez le nombre de fichiers ou la description");
+      }
     }
 
     // ── Post-traitement (désactivé en Mode Copie) ────────────────────────────
@@ -1066,15 +1075,17 @@ function generer() {
         words.forEach(function(w) { if (desc.indexOf(w) !== -1) score++; });
         return score;
       }
-      var matched = 0, fallback = 0, unmatched = 0;
+      var matched = 0, fallback = 0, unmatched = 0, nouveaux = 0, addedToLib = 0, defautsAppliques = 0;
+      var seenRefs = {};
       parsed.lots.forEach(function(lot) {
         if (!lot.lignes) return;
         lot.lignes.forEach(function(l) {
           var art = null;
           if (l.ref && libByRef[l.ref]) { art = libByRef[l.ref]; matched++; }
-          else {
+          else if (!l.nouveau && !l.prix_defaut) {
             var best = null, bestScore = 0;
             library.forEach(function(a) {
+              if ((a.note||"").indexOf("à vérifier") !== -1) return; // exclu tant que non validé manuellement
               var s = scoreMatch(a, l.description);
               if (s > bestScore && s >= 3) { bestScore = s; best = a; }
             });
@@ -1084,9 +1095,30 @@ function generer() {
             var retVal = (typeof art.ret === 'number' && art.ret > 0) ? art.ret : null;
             var minVal = (typeof art.min === 'number' && art.min > 0) ? art.min : null;
             l.pu_ht = discountMode ? (minVal !== null ? minVal : retVal) : retVal;
+          } else if (l.nouveau && typeof l.pu_ht === 'number' && l.pu_ht > 0) {
+            // Prestation absente de la bibliothèque, chiffrée via recherche web par le modèle.
+            // On conserve ce prix et on enrichit automatiquement la bibliothèque pour la prochaine fois.
+            nouveaux++;
+            var newRef = (l.ref_propose && !libByRef[l.ref_propose] && !seenRefs[l.ref_propose]) ? l.ref_propose : genRef(lot.intitule || "DIV");
+            while (libByRef[newRef] || seenRefs[newRef]) { newRef += "B"; }
+            seenRefs[newRef] = true;
+            var newArt = {
+              id: Date.now()+Math.random(), ref: newRef, cat: lot.intitule || "Divers",
+              des: l.description || "", unit: l.unite || "u",
+              min: null, max: null, ret: l.pu_ht, tva: 10,
+              note: "Ajouté automatiquement (IA + recherche web) — à vérifier"
+            };
+            library.push(newArt);
+            libByRef[newRef] = newArt;
+            l.ref = newRef;
+            addedToLib++;
+          } else if (l.prix_defaut && typeof l.pu_ht === 'number' && l.pu_ht > 0) {
+            // Prix fixé par une règle métier ARTEP (ex: carrelage par défaut) — conservé tel quel, pas d'ajout bibliothèque
+            defautsAppliques++;
           } else { l.pu_ht = null; }
         });
       });
+      if (addedToLib > 0) { saveLib(); if (typeof renderLib === 'function') renderLib(); }
 
       // Tri des lots dans l'ordre ARTEP
       function lotPriority(intitule) {
@@ -1124,6 +1156,9 @@ function generer() {
 
       var msg = "Étude générée — "+parsed.lots.length+" lots — "+matched+" prix directs";
       if (fallback>0) msg += " + "+fallback+" approchés";
+      if (nouveaux>0) msg += " + "+nouveaux+" chiffrées via recherche web";
+      if (defautsAppliques>0) msg += " + "+defautsAppliques+" au prix standard ARTEP";
+      if (addedToLib>0) msg += " ("+addedToLib+" ajoutée(s) à la bibliothèque — à vérifier)";
       if (unmatched>0) msg += " — "+unmatched+" à compléter";
       if (discountMode) msg += " 🏷️ DISCOUNT";
       toast(msg);
@@ -1192,7 +1227,7 @@ function renderPreview(d) {
       if (tot) sub += tot;
       tbody += "<tr class=\"ir\">"
         + "<td style=\"color:#bbb;font-size:9px;width:38px\">" + l.numero + "</td>"
-        + "<td style=\"line-height:1.4\">" + l.description + "</td>"
+        + "<td style=\"line-height:1.4\">" + l.description + (l.nouveau ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[NOUVEAU — prix web à vérifier]</span>" : (l.prix_defaut ? " <span style=\"color:#726b5e;font-size:8px;font-weight:700\">[Prix standard ARTEP]</span>" : "")) + "</td>"
         + "<td style=\"text-align:center;color:#666;width:40px\">" + l.unite + "</td>"
         + "<td style=\"text-align:center;width:50px\">" + (l.quantite != null ? fmtN(l.quantite) : "") + "</td>"
         + "<td style=\"text-align:right;width:80px;color:#aaa;font-style:italic;font-size:9px\">" + (l.pu_ht ? fmtE(l.pu_ht) : "—") + "</td>"
@@ -1254,7 +1289,7 @@ function renderPreview(d) {
       ].map(function(line){
         return "<div style=\"font-size:9px;color:#222;font-weight:600;padding:3px 0 3px 16px;border-left:3px solid #24364D;margin-bottom:3px;background:#fff\">" + line + "</div>";
       }).join("")
-    + "<div style=\"font-size:11px;font-weight:800;color:#C4620A;text-transform:uppercase;margin:12px 0 2px\">+ Option Assistance Sérénité <span style=\"font-weight:400;font-size:9px\">(AMO — à partir de 600€)</span></div>"
+    + "<div style=\"font-size:11px;font-weight:800;color:#C4620A;text-transform:uppercase;margin:12px 0 2px\">+ Option Assistance Sérénité <span style=\"font-weight:400;font-size:9px\">(AMO — à partir de 720€ TTC)</span></div>"
     + "<div style=\"font-size:8.5px;color:#555;font-style:italic;margin-bottom:6px\">Ce que l'AMO ajoute au courtage :</div>"
     + ["Assistance à la mise au point technique des travaux avant démarrage.",
        "Rédaction du planning travaux.",
@@ -1677,7 +1712,8 @@ async function exportExcel() {
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "ARTEP_"+(d.client||"").replace(/[^a-zA-Z0-9]/g,"_")+"_"+(d.date||"")+".xlsx";
+    var liveClient = (document.getElementById("f-client") && document.getElementById("f-client").value) || d.client || "Client";
+    a.download = "ARTEP_EtudeTarifaire_"+liveClient.replace(/[^a-zA-Z0-9]/g,"_")+"_"+(d.date||"")+".xlsx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1701,7 +1737,7 @@ function renderLib() {
   var search = (document.getElementById("lib-search").value || "").toLowerCase();
   var cat = document.getElementById("lib-cat").value;
   var filtered = library.filter(function(a) {
-    return (!cat || a.cat === cat) && (a.des.toLowerCase().indexOf(search) !== -1 || (a.ref||"").toLowerCase().indexOf(search) !== -1);
+    return (!cat || a.cat === cat) && (a.des.toLowerCase().indexOf(search) !== -1 || (a.ref||"").toLowerCase().indexOf(search) !== -1 || (a.note||"").toLowerCase().indexOf(search) !== -1);
   });
 
   document.getElementById("lib-stats").textContent = library.length + " article" + (library.length > 1 ? "s" : "") + " — " + filtered.length + " affiché" + (filtered.length > 1 ? "s" : "");
@@ -1726,11 +1762,13 @@ function renderLib() {
   }
   g.innerHTML = filtered.map(function(a) {
     var catShort = (a.cat || "").split("/")[0].trim();
-    return "<div class=\"lcard\">"
+    var aVerifier = (a.note||"").indexOf("à vérifier") !== -1;
+    return "<div class=\"lcard\"" + (aVerifier ? " style=\"border-left:3px solid #C4620A\"" : "") + ">"
       + "<div style=\"display:flex;justify-content:space-between;align-items:flex-start\">"
       + "<div class=\"lc-ref\">" + (a.ref || "—") + "</div>"
       + "<div class=\"lc-cat\">" + catShort + "</div>"
       + "</div>"
+      + (aVerifier ? "<div style=\"font-size:9px;font-weight:700;color:#C4620A;margin-bottom:2px\">⚠ À VÉRIFIER — ajouté automatiquement</div>" : "")
       + "<div class=\"lc-name\">" + a.des + "</div>"
       + (a.note ? "<div class=\"lc-desc\">" + a.note + "</div>" : "")
       + "<div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:6px\">"
