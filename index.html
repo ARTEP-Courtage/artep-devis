@@ -481,7 +481,7 @@ var DEFAULT_LIB = [
   {id:31,ref:"ELE-001",cat:"Électricité",des:"F/P tableau Schneider 3 rangées NFC 15-100 — différentiel + disjoncteurs",unit:"U",min:1250,max:1250,ret:1250,tva:10,note:""},
   {id:32,ref:"ELE-002",cat:"Électricité",des:"Pose tableau électrique fourni client — raccordement + mise en service",unit:"ens",min:180,max:280,ret:220,tva:10,note:"Main d'oeuvre uniquement"},
   {id:33,ref:"ELE-003",cat:"Électricité",des:"Câblage et création circuits — matériel fourni client hors prises — forfait",unit:"Forfait",min:800,max:1500,ret:980,tva:10,note:"Préciser nombre de points"},
-  {id:34,ref:"ELE-004",cat:"Électricité",des:"F/P prise de courant simple 16A SCHNEIDER OVALIS blanc",unit:"U",min:95,max:125,ret:95,tva:10,note:""},
+  {id:34,ref:"ELE-004",cat:"Électricité",des:"F/P prise de courant simple 16A SCHNEIDER OVALIS blanc",unit:"U",min:120,max:125,ret:120,tva:10,note:"Fourniture + pose"},
   {id:35,ref:"ELE-005",cat:"Électricité",des:"F/P prise de courant simple 20A",unit:"U",min:115,max:155,ret:130,tva:10,note:"Électroménager dédié"},
   {id:36,ref:"ELE-006",cat:"Électricité",des:"F/P prise 16A IP44 SDB — norme NF C 15-100",unit:"U",min:125,max:125,ret:125,tva:10,note:""},
   {id:37,ref:"ELE-007",cat:"Électricité",des:"F/P interrupteur simple SCHNEIDER",unit:"U",min:95,max:135,ret:115,tva:10,note:""},
@@ -523,7 +523,7 @@ var DEFAULT_LIB = [
   {id:73,ref:"PEI-001",cat:"Peinture",des:"2 couches peinture finition Guittet/Tollens blanc velouté — murs",unit:"m²",min:28,max:29,ret:28,tva:10,note:""},
   {id:74,ref:"PEI-002",cat:"Peinture",des:"Enduit gros fin + impression + 2 couches Guittet/Tollens — plafonds + murs",unit:"m²",min:32,max:51,ret:41,tva:10,note:"Peinture humidité SDB si besoin"},
   {id:75,ref:"PEI-003",cat:"Peinture",des:"2 couches peinture spéciale humidité — plafond SDB (Tollens Hydromat)",unit:"m²",min:14,max:17,ret:17,tva:10,note:""},
-  {id:76,ref:"PEI-004",cat:"Peinture",des:"Plus-value Fissnet — bande armée anti-fissures sous peinture",unit:"m²",min:6.4,max:14,ret:8,tva:10,note:"Option selon état murs"},
+  {id:76,ref:"PEI-004",cat:"Peinture",des:"Plus-value Fissnet — bande armée anti-fissures sous peinture",unit:"m²",min:12,max:14,ret:12,tva:10,note:"Option selon état murs"},
   {id:77,ref:"GOE-001",cat:"Gros oeuvre / Maçonnerie",des:"Fouilles en rigole 30x30 cm — terrassement",unit:"ml",min:25,max:25,ret:25,tva:20,note:""},
   {id:78,ref:"GOE-002",cat:"Gros oeuvre / Maçonnerie",des:"Murs blocs à bancher + ferraillage HA10 + béton C25/30",unit:"m²",min:295,max:295,ret:295,tva:20,note:""},
   {id:79,ref:"GOE-003",cat:"Gros oeuvre / Maçonnerie",des:"Dalle BA brute EP12 cm + treillis soudé + béton C25/30",unit:"m²",min:145,max:146,ret:146,tva:20,note:""},
@@ -629,6 +629,19 @@ window.onload = function() {
       .then(function(s) { s.getTracks().forEach(function(t) { t.stop(); }); })
       .catch(function() {});
   }
+
+
+  // === Injection paramètres URL depuis CRM/Make ===
+  var urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('client')) document.getElementById('f-client').value = urlParams.get('client');
+  if (urlParams.get('adresse')) document.getElementById('f-adresse').value = urlParams.get('adresse');
+  if (urlParams.get('ville')) {
+    var _adr = document.getElementById('f-adresse').value;
+    document.getElementById('f-adresse').value = _adr ? _adr + ', ' + urlParams.get('ville') : urlParams.get('ville');
+  }
+  if (urlParams.get('objet')) document.getElementById('f-objet').value = urlParams.get('objet');
+  if (urlParams.get('travaux')) document.getElementById('txt').value = urlParams.get('travaux');
+  // === Fin injection ===
 
   // Fermer modal en cliquant dehors
   document.getElementById("modal-art").addEventListener("click", function(e) {
@@ -949,27 +962,35 @@ function generer() {
     + "   LOT 1 — DÉMOLITION / DÉPOSE\n"
     + "   LOT 2 — PLOMBERIE / SANITAIRE\n"
     + "   LOT 3 — ÉLECTRICITÉ\n"
-    + "   LOT 4 — PLÂTRERIE / CLOISONS\n"
+    + "   LOT 4 — PLÂTRERIE / CLOISONS / MENUISERIES INTÉRIEURES (les portes intérieures, portes coulissantes, placards, dressings vont dans ce lot)\n"
     + "   LOT 5 — CARRELAGE / ÉTANCHÉITÉ\n"
     + "   LOT 6 — PEINTURE\n"
-    + "   LOT 7 — DIVERS (toujours en dernier)\n"
+    + "   LOT 7 — MENUISERIES EXTÉRIEURES (fenêtres, châssis, portes-fenêtres, volets, porte d'entrée — lot séparé et dédié)\n"
+    + "   LOT 8 — DIVERS / CHANTIER (toujours en dernier, seul)\n"
+    + "RÈGLE LOTS : les menuiseries INTÉRIEURES sont TOUJOURS dans le lot 4 avec la plâtrerie/cloisons. Les menuiseries EXTÉRIEURES ont TOUJOURS leur propre lot séparé (lot 7). Le lot DIVERS reste TOUJOURS seul et en dernier.\n"
     + "Générer uniquement les lots réellement concernés — mais inférer intelligemment ce qui est nécessaire même si non mentionné.\n\n"
     + "RÈGLES ABSOLUES :\n"
     + "1. Descriptions professionnelles style \'Four. et pose...\'. Jamais de calculs dans la description.\n"
     + "2. Si la prestation correspond à un article de la bibliothèque : PU HT = null, champ \'ref\' = référence exacte, \'nouveau\' = false.\n"
     + "3. Numérotation : 1.1, 1.2... selon l\'ordre réel des lots.\n\n"
-    + "PRESTATIONS HORS BIBLIOTHÈQUE — CHIFFRAGE OBLIGATOIRE :\n"
-    + "Si une prestation nécessaire n\'a AUCUNE correspondance dans la bibliothèque ci-dessus : ne la laisse JAMAIS sans prix. Utilise l\'outil de recherche web pour trouver un prix réaliste fourniture + pose, marché France / Île-de-France actuel. Dans ce cas précis, et uniquement celui-ci :\n"
-    + "   \"ref\": null, \"nouveau\": true, \"pu_ht\": <prix HT estimé, nombre, jamais null>, \"ref_propose\": \"<3 lettres catégorie>-<numéro>\" (ex: \'ELE-042\', cohérent avec la nomenclature ARTEP existante).\n"
-    + "Choisis l\'unité la plus pertinente : m², ml, u ou forfait. Exemple : {\"numero\":\"3.4\",\"description\":\"Four. et pose garde-corps aluminium\",\"unite\":\"ml\",\"quantite\":4,\"pu_ht\":180,\"ref\":null,\"nouveau\":true,\"ref_propose\":\"DIV-042\"}\n"
+    + "PRESTATIONS HORS BIBLIOTHÈQUE — CHIFFRAGE :\n"
+    + "Si une prestation nécessaire n'a AUCUNE correspondance dans la bibliothèque ci-dessus : n'invente JAMAIS de prix. Utilise l'outil de recherche web et RÈGLE ABSOLUE DE FIABILITÉ : ne retiens un prix QUE s'il est confirmé par AU MOINS DEUX sources fiables et indépendantes (fabricant, distributeur professionnel reconnu type CEDEO/Point P/Rexel, catalogue pro) qui CONCORDENT (écart raisonnable). Le prix retenu = prix fourniture + pose cohérent marché France/Île-de-France.\n"
+    + "SI tu ne trouves pas au moins deux sources fiables concordantes → laisse le prix VIDE (pu_ht = null). Une case vide est ACCEPTABLE et OBLIGATOIRE dans ce cas ; un prix inventé, approximatif ou basé sur une seule source est INTERDIT. Mieux vaut un champ vide qu'un prix non fiable.\n"
+    + "Dans le cas d'un prix trouvé et croisé : \"ref\": null, \"nouveau\": true, \"pu_ht\": <prix HT vérifié>, \"ref_propose\": \"<3 lettres catégorie>-<numéro>\". Dans le cas d'un prix non trouvé de façon fiable : \"ref\": null, \"nouveau\": true, \"pu_ht\": null, \"ref_propose\": null.\n"
+    + "Choisis l'unité la plus pertinente : m², ml, u ou forfait.\n"
     + "APPAREILS SANITAIRES (receveur, WC, vasque, robinetterie, ballon eau chaude, colonne de douche...) et VMC/VMR — prestations nouvelles uniquement (hors bibliothèque) : la description DOIT citer la marque et le modèle exact de l\'appareil retenu (trouvés via la recherche web). N\'indique un prix public TTC dans la description QUE si tu as pu le vérifier réellement via la recherche web (prix constructeur ou distributeur confirmé par une source) — si aucun prix public fiable n\'est trouvé, ne mentionne aucun prix public dans la description ; le pu_ht reste ton estimation chiffrée normalement.\n\n"
     + "AUTOMATISMES OBLIGATOIRES :\n"
     + "- LOT DÉMOLITION/DÉPOSE : l'évacuation des gravats est couverte par UNE SEULE ligne finale du lot (ref DEP-008 'Évacuation gravats en déchetterie agréée'). Sur TOUTES les autres lignes de dépose, n'écris JAMAIS 'évacuation comprise' ni formulation équivalente — décris uniquement l'opération de dépose elle-même.\n"
     + "- RADIATEURS ÉLECTRIQUES, SÈCHE-SERVIETTES ÉLECTRIQUES, VMC, VMR et tout équipement électrique : toujours en LOT ÉLECTRICITÉ, jamais dans un autre lot (même si mentionnés à côté d'un poste plomberie ou plâtrerie dans la description).\n"
-    + "- CARRELAGE / FAÏENCE : surfaces + 11% pour chutes/découpes (10m² → 11.1)\n"
+    + "- CALCUL QUANTITÉ CLOISONS BA13 : quantité en m² = (somme des linéaires développés en m, retours compris) × hauteur en m, sur UNE SEULE FACE (ne jamais multiplier par 2 pour les deux parements). Exemple : cloison 2,40 m + retour 1,00 m sur 2,50 m de haut → (2,40 + 1,00) × 2,50 = 8,5 m². N'écris pas ce calcul dans la description.\n"
+    + "- CALCUL QUANTITÉ PEINTURE : UNE SEULE ligne peinture (LOT 6) dont la quantité m² = [murs : périmètre de chaque pièce × hauteur sous plafond, SANS déduire les portes/fenêtres] + [plafonds : surface au sol de chaque pièce], le tout CUMULÉ en une seule quantité globale. N'écris pas le détail du calcul dans la description.\n"
+    + "- CALCUL QUANTITÉ CARRELAGE / FAÏENCE : applique +11% sur les surfaces pour chutes/découpes DANS LE CALCUL DE LA QUANTITÉ uniquement (10m² → 11.1). N'écris JAMAIS la mention '+11%', 'chutes/découpes' ni le détail du calcul dans la description visible par le client.\n"
     + "- CARRELAGE SOL : ajouter \'Four. & pose seuil de porte aluminium anodisé\' ref DIV-004 — 1u par porte (0.70ml)\n"
     + "- PRIX CARRELAGE PAR DÉFAUT : si la description du chantier ne précise pas de marque, modèle, gamme ou prix pour le carrelage/faïence à poser, NE cherche PAS de correspondance bibliothèque pour la ligne fourniture+pose — fixe toi-même : \"ref\":null, \"nouveau\":false, \"prix_defaut\":true, carrelage SOL = 22.73€ HT/m² (25€ TTC), faïence MUR = 20€ HT/m² (22€ TTC). AUCUNE marque ni modèle pour le carrelage — précise en revanche dans la description la fourchette de format : carrelage SOL 'format entre 25x25 cm et 60x60 cm selon choix client', faïence MUR 'format entre 20x20 cm et 30x60 cm selon choix client'. Si la description précise un modèle/gamme/prix différent, utilise plutôt la référence bibliothèque correspondante si elle existe (et ne mets pas \"prix_defaut\").\n"
     + "- PLOMBERIE avec douche/receveur/baignoire : LOT 2 → colonne douche thermostatique (ref SAN-009, jamais encastré) + LOT 4 → \'Coffrage BA13 hydrofugé — passage plomberie EF/EC mitigeur\' ref PLA-006\n"
+    + "- TRAPPES DE VISITE : n'inclus JAMAIS de trappe de visite dans les coffrages/habillages BA13 par défaut. Ne l'ajoute (mention 'trappe de visite aimantée comprise' ou ligne dédiée) QUE si la demande du chantier la mentionne explicitement.\n"
+    + "- DÉTAILS DE CALCUL / DIMENSIONS : n'écris JAMAIS dans la description les calculs internes de dimensionnement (ex. 'linéaire 240cm x hauteur 250cm', 'L=240 x H=250', 'surface 476x440cm'). La description reste commerciale et technique ; les métrés servent uniquement à calculer la quantité, ils ne regardent pas le client.\n"
+    + "- SPOTS / POINTS LUMINEUX ENCASTRÉS : n'ajoute des spots ou points lumineux encastrés QUE s'ils sont explicitement demandés dans la description du chantier. Ne les génère JAMAIS automatiquement au motif qu'un faux-plafond est prévu.\n"
     + "- VASQUE / LAVABO / MEUBLE VASQUE : LOT 2 → mitigeur vasque Grohe Bau Loop ref SAN-007\n"
     + "- INTERDIT : jamais mitigeur thermostatique encastré\n"
     + "- LOT PLOMBERIE — DESCRIPTIONS DÉTAILLÉES OBLIGATOIRES : chaque ligne de plomberie doit préciser le type d'alimentation eau froide/eau chaude (multicouche ou PER) et le diamètre d'évacuation PVC adapté à l'appareil concerné : Ø100 pour WC, Ø40 pour évier/lavabo/vasque, Ø32 pour lave-vaisselle/lave-linge. Ne jamais se contenter d'une formulation générique comme 'travaux de plomberie pour...' sans ces précisions techniques.\n"
@@ -977,13 +998,15 @@ function generer() {
     + "- PLÂTRERIE : si plomberie ou démolition → prévoir reprises plâtres et coffrages\n"
     + "- PEINTURE LOT 6 : UNE SEULE LIGNE regroupant murs ET plafonds. OBLIGATOIRE : 'Rebouchage, ponçage et époussetage, enduit gros et fin, couche d\'impression, 2 couches peinture finition TOLLENS ou équiv. — Plafonds BLANC MAT / Murs BLANC SATINÉ. Peinture spéciale humidité pièces d\'eau. Portes intérieures comprises.' — Quantité = surfaces murs + plafonds cumulées en m². INTERDIT de créer une ligne séparée pour les murs et une autre pour les plafonds. INTERDIT de dupliquer si déjà présent dans un autre lot.\n"
     + "- GROS OEUVRE : si mur porteur, IPN, parpaings, dalle béton → créer LOT GROS OEUVRE / MAÇONNERIE inséré AVANT LOT PLOMBERIE\n\n"
+    + "- LIGNES EN OPTION : toute prestation proposée en option (doublage thermique, revêtement alternatif, prestation 'sur devis séparé', alternative mutuellement exclusive...) doit porter \"option\":true et commencer sa description par 'OPTION — '. Les lignes option ne sont JAMAIS comptées dans les sous-totaux ni dans le total général (elles sont chiffrées mais affichées hors total). Deux alternatives mutuellement exclusives (ex. carrelage OU parquet sur la même surface) doivent TOUTES porter \"option\":true.\n"
+    + "- RELECTURE ANTI-DOUBLON OBLIGATOIRE : avant de produire le JSON, relis l'ensemble des lignes et supprime tout doublon — une même prestation ou un même appareil ne doit apparaître qu'une seule fois. Traite les termes équivalents comme un même appareil (machine à laver = lave-linge = MAL ; lave-vaisselle = LV). RÈGLE STRICTE : si une ligne de réseau global (alimentation/évacuation d'ensemble) mentionne déjà un appareil dans son énumération, tu ne dois créer AUCUNE ligne séparée pour l'alimentation ou l'évacuation de ce même appareil. Exemple concret à ne jamais reproduire : une ligne 'réseau complet pour receveur, vasque, WC, évier ET machine à laver' rend INTERDITE toute ligne distincte 'création alimentation machine à laver'.\n"
     + "- UNE SEULE ligne 'Approvisionnement + protection chantier + nettoyage' — Forfait ref DIV-002\n"
     + "- Paris uniquement : ajouter 'Stationnement Paris' ref DIV-007\n"
     + "- Ne jamais générer 'livraison matériaux' sauf demande explicite\n\n"
-    + "VÉRIFICATION AVANT JSON : ordre lots OK, pas de doublons, une seule protection chantier, +11% carrelages, seuils portes, coffrages BA13, peinture avec rebouchage+ponçage+époussetage, pas d'\'évacuation comprise\' hors ligne finale dépose, radiateurs/VMC en lot électricité, prix carrelage par défaut appliqué si non précisé, plomberie détaillée (alimentation + diamètres), ligne marque appareillage électrique. Puis JSON uniquement.\n\n"
+    + "VÉRIFICATION AVANT JSON : ordre lots OK, AUCUN doublon (relis toutes les lignes), une seule protection chantier, quantités carrelage +11% mais SANS mention visible du calcul, aucun détail dimensionnel dans les descriptions, seuils portes, coffrages BA13 SANS trappe sauf demande, pas de spots sauf demande, radiateurs/sèche-serviettes/VMC en lot électricité, lignes option marquées \"option\":true et hors total, peinture avec rebouchage+ponçage+époussetage, plomberie détaillée (alimentation + diamètres), ligne marque appareillage électrique. Puis JSON uniquement.\n\n"
     + "IMPORTANT : même si tu utilises la recherche web pour chiffrer une prestation, ne commente JAMAIS tes recherches dans ta réponse finale. Aucun texte, aucune explication, aucune citation visible avant, pendant ou après le JSON — uniquement le JSON.\n\n"
     + "JSON UNIQUEMENT sans backticks, sans texte avant ou après :\n"
-    + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"DÉMOLITION / DÉPOSE\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":\"DEP-001\",\"nouveau\":false,\"prix_defaut\":false}]}]}";
+    + "{\"objet\":\"résumé\",\"lots\":[{\"nom\":\"LOT 1\",\"intitule\":\"DÉMOLITION / DÉPOSE\",\"lignes\":[{\"numero\":\"1.1\",\"description\":\"...\",\"unite\":\"ens\",\"quantite\":1,\"pu_ht\":null,\"ref\":\"DEP-001\",\"nouveau\":false,\"prix_defaut\":false,\"option\":false}]}]}";
   } // fin else mode standard
 
   var msgContent = [];
@@ -1085,7 +1108,6 @@ function generer() {
           else if (!l.nouveau && !l.prix_defaut) {
             var best = null, bestScore = 0;
             library.forEach(function(a) {
-              if ((a.note||"").indexOf("à vérifier") !== -1) return; // exclu tant que non validé manuellement
               var s = scoreMatch(a, l.description);
               if (s > bestScore && s >= 3) { bestScore = s; best = a; }
             });
@@ -1129,7 +1151,9 @@ function generer() {
         if (u.indexOf("PLÂT")!==-1||u.indexOf("PLAT")!==-1||u.indexOf("CLOIS")!==-1) return 4;
         if (u.indexOf("CARREL")!==-1||u.indexOf("ÉTANCH")!==-1||u.indexOf("ETANCH")!==-1) return 5;
         if (u.indexOf("PEINTUR")!==-1||u.indexOf("ENDUIT")!==-1) return 6;
-        if (u.indexOf("DIVERS")!==-1) return 99;
+        // Menuiseries extérieures = lot dédié (7). Les menuiseries intérieures sont censées être dans le lot 4.
+        if (u.indexOf("MENUIS")!==-1) return (u.indexOf("EXTÉR")!==-1||u.indexOf("EXTER")!==-1) ? 7 : 4;
+        if (u.indexOf("DIVERS")!==-1||u.indexOf("CHANTIER")!==-1) return 99;
         return 50;
       }
       parsed.lots.sort(function(a,b){ return lotPriority(a.intitule)-lotPriority(b.intitule); });
@@ -1223,15 +1247,16 @@ function renderPreview(d) {
     var sub = 0;
     tbody += "<tr class=\"lr\" style=\"background:#24364D\"><td colspan=\"6\">&nbsp;&nbsp;" + lot.nom + " - " + lot.intitule + "</td></tr>";
     lot.lignes.forEach(function(l) {
+      var isOption = !!l.option;
       var tot = (l.quantite && l.pu_ht) ? l.quantite * l.pu_ht : null;
-      if (tot) sub += tot;
-      tbody += "<tr class=\"ir\">"
+      if (tot && !isOption) sub += tot;
+      tbody += "<tr class=\"ir\"" + (isOption ? " style=\"opacity:.85\"" : "") + ">"
         + "<td style=\"color:#bbb;font-size:9px;width:38px\">" + l.numero + "</td>"
-        + "<td style=\"line-height:1.4\">" + l.description + (l.nouveau ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[NOUVEAU — prix web à vérifier]</span>" : (l.prix_defaut ? " <span style=\"color:#726b5e;font-size:8px;font-weight:700\">[Prix standard ARTEP]</span>" : "")) + "</td>"
+        + "<td style=\"line-height:1.4\">" + l.description + (isOption ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[OPTION — hors total]</span>" : "") + (l.nouveau ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[NOUVEAU — prix web à vérifier]</span>" : (l.prix_defaut ? " <span style=\"color:#726b5e;font-size:8px;font-weight:700\">[Prix standard ARTEP]</span>" : "")) + "</td>"
         + "<td style=\"text-align:center;color:#666;width:40px\">" + l.unite + "</td>"
         + "<td style=\"text-align:center;width:50px\">" + (l.quantite != null ? fmtN(l.quantite) : "") + "</td>"
         + "<td style=\"text-align:right;width:80px;color:#aaa;font-style:italic;font-size:9px\">" + (l.pu_ht ? fmtE(l.pu_ht) : "—") + "</td>"
-        + "<td style=\"text-align:right;width:85px;font-family:'JetBrains Mono',monospace;font-weight:600\">" + (tot ? fmtE(tot) : "") + "</td>"
+        + "<td style=\"text-align:right;width:85px;font-family:'JetBrains Mono',monospace;font-weight:600\">" + (tot ? (isOption ? "("+fmtE(tot)+")" : fmtE(tot)) : "") + "</td>"
         + "</tr>";
     });
     totalHT += sub;
@@ -1273,9 +1298,9 @@ function renderPreview(d) {
     + "<tr class=\"tttc\" style=\"background:#C4620A\"><td colspan=\"5\">TOTAL TTC TRAVAUX</td><td>" + (ttc > 0 ? fmtE(ttc) : "—") + "</td></tr>"
     + "</tbody></table>"
     + "<div class=\"df\">"
-    + "<div style=\"font-size:9px;color:#555;margin-bottom:6px\">Engagement délai : " + delai + ". Pénalités de retard.</div>"
+    + "<div style=\"font-size:9px;color:#555;margin-bottom:6px\">Engagement délai : " + delai + ". Pénalités de retard selon CGV.</div>"
     + "<div class=\"ptit\">CONDITION DE RÈGLEMENT SUR MESURE NON CONTRACTUELLE</div>"
-    + "<div style=\"font-size:9px;color:#444;line-height:1.8\">• " + pay1 + "<br>• " + pay2 + "<br>• " + pay3 + "</div>"
+    + "<div style=\"font-size:9px;color:#444;line-height:1.8\">• Acompte 40 % à la signature du bon de commande<br>• 25 % sur situation en cours de travaux<br>• 30 % sur situation en cours de travaux<br>• Solde 5 % à réception des travaux</div>"
     + "<div style=\"font-size:8px;color:#777;margin-top:8px;font-style:italic\">Document non contractuel - valable 30 jours. TVA 10% pour travaux rénovation logement achevé depuis + de 2 ans (Art. 279-0 bis CGI).</div>"
     + "</div>"
     + "<div style=\"padding:14px 20px;background:#F4F4F4;border-top:2px solid #24364D\">"
@@ -1527,8 +1552,14 @@ async function exportExcel() {
     var lineStart = rn;
 
     lot.lignes.forEach(function(l) {
-      var descLen = (l.description||"").length;
-      ws.getRow(rn).height = Math.max(18, Math.min(60, 15 + Math.floor(descLen/60)*14));
+      var isOption = !!l.option;
+      // Hauteur calculée sur le nombre réel de caractères et la largeur de colonne B,
+      // en tenant compte des retours à la ligne explicites — aucun texte tronqué.
+      var desc = l.description || "";
+      var charsPerLine = 60;
+      var wrapped = 0;
+      desc.split("\n").forEach(function(seg){ wrapped += Math.max(1, Math.ceil((seg.length||1)/charsPerLine)); });
+      ws.getRow(rn).height = Math.max(18, wrapped * 13.5 + 4);
 
       ws.getCell("A"+rn).value = l.numero;
       sc(ws.getCell("A"+rn), fn(false,8,C8), sf(CW), al("center","top"), bH());
@@ -1545,23 +1576,32 @@ async function exportExcel() {
       ws.getCell("E"+rn).value = l.pu_ht;
       sc(ws.getCell("E"+rn), fn(false,9,CB), sf(CW), al("right","top"), bH(), "#,##0.00 \"€\"");
 
-      ws.getCell("F"+rn).value = {formula:"D"+rn+"*E"+rn};
+      // Colonne G (masquée) = marqueur option : 1 = option (exclue des totaux), 0 = normale.
+      // La colonne F (total ligne) vaut 0 si option, sinon D*E → SUBTOTAL somme correctement,
+      // y compris après insertion d'une nouvelle ligne dans le lot.
+      ws.getCell("G"+rn).value = isOption ? 1 : 0;
+      ws.getCell("F"+rn).value = {formula:"IF($G"+rn+"=1,0,D"+rn+"*E"+rn+")"};
       sc(ws.getCell("F"+rn), fn(false,9,C2), sf(CW), al("right","top"), bH(), "#,##0.00 \"€\"");
+
       rn++;
     });
 
     var lineEnd = rn - 1;
 
-    // Sous-total
+    // Sous-total — SUBTOTAL(9, plage) : s'étend automatiquement si tu insères une ligne
+    // À L'INTÉRIEUR de la plage du lot (entre lineStart et lineEnd). Les options (F=0) ne comptent pas.
     ws.mergeCells("A"+rn+":E"+rn);
     ws.getCell("A"+rn).value = "Sous-total " + lot.nom + " HT";
     sc(ws.getCell("A"+rn), fn(true,9,C3), sf(CG), al("right"), bH(BM));
-    ws.getCell("F"+rn).value = {formula:"SUM(F"+lineStart+":F"+lineEnd+")"};
+    ws.getCell("F"+rn).value = {formula:"SUBTOTAL(9,F"+lineStart+":F"+lineEnd+")"};
     sc(ws.getCell("F"+rn), fn(true,9,C3), sf(CG), al("right"), bH(BM), "#,##0.00 \"€\"");
     stCells.push("F"+rn);
     ws.getRow(rn).height = 18;
     rn++;
   });
+
+  // Colonne G masquée (marqueurs option, sert uniquement au calcul)
+  ws.getColumn("G").hidden = true;
 
   // ── Vue NORMALE — supprime le gel et le chevauchement des pages au scroll ──
   ws.views = [{state:"normal", zoomScale:90, showGridLines:true}];
@@ -1590,10 +1630,11 @@ async function exportExcel() {
 
   [
     [true,  "CONDITION DE RÈGLEMENT SUR MESURE NON CONTRACTUELLE"],
-    [false, "Engagement délai : "+delai+". Pénalités de retard."],
-    [false, "• "+pay1],
-    [false, "• "+pay2.replace("en milieu de chantier","en cours de travaux")],
-    [false, "• "+pay3],
+    [false, "Engagement délai : "+delai+". Pénalités de retard selon CGV."],
+    [false, "• Acompte 40 % à la signature du bon de commande"],
+    [false, "• 25 % sur situation en cours de travaux"],
+    [false, "• 30 % sur situation en cours de travaux"],
+    [false, "• Solde 5 % à réception des travaux"],
     [false, "Document non contractuel - valable 30 jours. TVA 10 % pour travaux de rénovation de locaux d'habitation achevés depuis plus de 2 ans (Art. 279-0 bis CGI)."]
   ].forEach(function(pr) {
     ws.mergeCells("A"+rn+":F"+rn);
@@ -1648,7 +1689,7 @@ async function exportExcel() {
 
   // Titre Option AMO Sérénité
   ws.mergeCells("A"+rn+":F"+rn);
-  ws.getCell("A"+rn).value = "+ OPTION ASSISTANCE SÉRÉNITÉ  (AMO — À PARTIR DE 600€)";
+  ws.getCell("A"+rn).value = "+ OPTION ASSISTANCE SÉRÉNITÉ  (AMO — À PARTIR DE 720€ TTC)";
   sc(ws.getCell("A"+rn), fn(true,10,CW), sf(CO), al("left"));
   ws.getRow(rn).height = 20; rn++;
 
