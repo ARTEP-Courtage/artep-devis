@@ -209,7 +209,10 @@ tr.tttc td:last-child{text-align:right;font-size:14px;}
 
       <!-- DESCRIPTION TEXTE -->
       <div class="card">
-        <div class="slbl">Description du chantier</div>
+        <div class="slbl" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Description du chantier</span>
+          <button type="button" onclick="openDescExpand()" title="Agrandir la zone de saisie" style="background:none;border:1px solid var(--or);color:var(--or);border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;cursor:pointer;text-transform:uppercase">⤢ Agrandir</button>
+        </div>
         <textarea class="desc" id="txt" placeholder="Décrivez ici les travaux, dimensions, prestations...&#10;&#10;La dictée vocale s'ajoute automatiquement dans cette zone.&#10;&#10;Exemple : Rénovation SDB 2m×3m. Dépose carrelage sol et faïence. WC suspendu Geberit + Vitra sans bride. Receveur 80×100. Mitigeur Grohe Bau Loop. Carrelage 60×60 effet béton. Peinture plafond 2 couches."></textarea>
 
         <!-- DICTÉE VOCALE -->
@@ -392,6 +395,20 @@ tr.tttc td:last-child{text-align:right;font-size:14px;}
     <div class="mact">
       <button class="btn btn-g" onclick="closeModal()">Annuler</button>
       <button class="btn btn-p" onclick="saveArt()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY AGRANDISSEMENT DESCRIPTION CHANTIER -->
+<div class="overlay" id="modal-desc">
+  <div class="modal" style="max-width:820px;display:flex;flex-direction:column">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Description du chantier</span>
+      <button type="button" onclick="closeDescExpand()" title="Réduire" style="background:none;border:1px solid var(--or);color:var(--or);border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;cursor:pointer;text-transform:uppercase">⤡ Réduire</button>
+    </div>
+    <textarea id="txt-big" class="desc" style="min-height:58vh;resize:vertical;width:100%" placeholder="Décrivez ici les travaux, dimensions, prestations..."></textarea>
+    <div class="mact" style="margin-top:14px">
+      <button class="btn btn-p" onclick="closeDescExpand()" style="width:100%">✓ Terminé — revenir à l'étude</button>
     </div>
   </div>
 </div>
@@ -630,22 +647,13 @@ window.onload = function() {
       .catch(function() {});
   }
 
-
-  // === Injection paramètres URL depuis CRM/Make ===
-  var urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('client')) document.getElementById('f-client').value = urlParams.get('client');
-  if (urlParams.get('adresse')) document.getElementById('f-adresse').value = urlParams.get('adresse');
-  if (urlParams.get('ville')) {
-    var _adr = document.getElementById('f-adresse').value;
-    document.getElementById('f-adresse').value = _adr ? _adr + ', ' + urlParams.get('ville') : urlParams.get('ville');
-  }
-  if (urlParams.get('objet')) document.getElementById('f-objet').value = urlParams.get('objet');
-  if (urlParams.get('travaux')) document.getElementById('txt').value = urlParams.get('travaux');
-  // === Fin injection ===
-
   // Fermer modal en cliquant dehors
   document.getElementById("modal-art").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
+  });
+  // Fermer l'agrandissement description en cliquant dehors (recopie le contenu)
+  document.getElementById("modal-desc").addEventListener("click", function(e) {
+    if (e.target === this) closeDescExpand();
   });
 };
 
@@ -752,6 +760,9 @@ function _startRecognition(SR) {
     if (final) { ta.value = ta.value.substring(0, interimStart) + final; interimStart = ta.value.length; }
     else if (interim) ta.value = ta.value.substring(0, interimStart) + interim;
     if (interim) document.getElementById("vstatus").textContent = "● " + interim;
+    // Miroir vers la zone agrandie si elle est ouverte
+    var big = document.getElementById("txt-big");
+    if (big && document.getElementById("modal-desc").classList.contains("open")) big.value = ta.value;
   };
 
   rec.onend = function() {
@@ -1840,6 +1851,23 @@ function openModal(item) {
 }
 function editArt(id) { openModal(library.filter(function(a){return a.id===id;})[0]); }
 function closeModal() { document.getElementById("modal-art").classList.remove("open"); }
+
+// ── AGRANDISSEMENT DE LA DESCRIPTION DU CHANTIER ──
+function openDescExpand() {
+  var small = document.getElementById("txt");
+  var big = document.getElementById("txt-big");
+  big.value = small.value;                    // reprend le contenu déjà saisi
+  document.getElementById("modal-desc").classList.add("open");
+  // synchronise en temps réel la grande zone vers la petite (dictée vocale incluse)
+  big.oninput = function() { small.value = big.value; };
+  setTimeout(function(){ big.focus(); }, 50);
+}
+function closeDescExpand() {
+  var small = document.getElementById("txt");
+  var big = document.getElementById("txt-big");
+  small.value = big.value;                    // recopie vers la petite zone en repliant
+  document.getElementById("modal-desc").classList.remove("open");
+}
 
 function delArt(id) {
   if (!confirm("Supprimer cet article ?")) return;
