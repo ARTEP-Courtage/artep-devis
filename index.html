@@ -1157,6 +1157,7 @@ function generer() {
             var retVal = (typeof art.ret === 'number' && art.ret > 0) ? art.ret : null;
             var minVal = (typeof art.min === 'number' && art.min > 0) ? art.min : null;
             l.pu_ht = discountMode ? (minVal !== null ? minVal : retVal) : retVal;
+            l.tva = (typeof art.tva === 'number') ? art.tva : (parseFloat(art.tva) || 10);  // taux TVA de l'article
           } else if (l.nouveau && typeof l.pu_ht === 'number' && l.pu_ht > 0) {
             // Prestation hors bibliothèque, chiffrée via recherche web croisée par le modèle.
             // On CONSERVE le prix dans l'étude, mais on N'AJOUTE PLUS automatiquement à la bibliothèque.
@@ -1311,6 +1312,7 @@ function renderPreview(d) {
   var vs = d.visite ? new Date(d.visite + "T12:00:00").toLocaleDateString("fr-FR") : "";
   var totalHT = 0;
   var tbody = "";
+  var htParTaux = {};   // base HT cumulée par taux de TVA (hors options)
 
   d.lots.forEach(function(lot) {
     var sub = 0;
@@ -1318,7 +1320,11 @@ function renderPreview(d) {
     lot.lignes.forEach(function(l) {
       var isOption = !!l.option;
       var tot = (l.quantite && l.pu_ht) ? l.quantite * l.pu_ht : null;
-      if (tot && !isOption) sub += tot;
+      if (tot && !isOption) {
+        sub += tot;
+        var taux = (typeof l.tva === 'number') ? l.tva : (parseFloat(l.tva) || 10);
+        htParTaux[taux] = (htParTaux[taux] || 0) + tot;
+      }
       tbody += "<tr class=\"ir\"" + (isOption ? " style=\"opacity:.85\"" : "") + ">"
         + "<td style=\"color:#bbb;font-size:9px;width:38px\">" + l.numero + "</td>"
         + "<td style=\"line-height:1.4\">" + l.description + (l._associe ? " <span style=\"color:#2f6b3f;font-size:8px;font-weight:700\">[AUTO-ASSOCIÉ]</span>" : "") + (isOption ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[OPTION — hors total]</span>" : "") + (l.nouveau ? " <span style=\"color:#C4620A;font-size:8px;font-weight:700\">[NOUVEAU — prix web à vérifier]</span>" : (l.prix_defaut ? " <span style=\"color:#726b5e;font-size:8px;font-weight:700\">[Prix standard ARTEP]</span>" : "")) + "</td>"
@@ -1333,8 +1339,17 @@ function renderPreview(d) {
     tbody += "<tr><td colspan=\"6\" style=\"height:5px;background:#fff\"></td></tr>";
   });
 
-  var tva = totalHT * 0.10;
+  // TVA multi-taux : une part de TVA par taux présent
+  var tauxTries = Object.keys(htParTaux).map(parseFloat).sort(function(a,b){return a-b;});
+  var tva = 0;
+  tauxTries.forEach(function(t){ tva += htParTaux[t] * (t/100); });
   var ttc = totalHT + tva;
+  // Lignes TVA à afficher (une par taux si plusieurs, sinon une seule)
+  var tvaRows = tauxTries.map(function(t){
+    var mt = htParTaux[t] * (t/100);
+    var label = "TVA " + (t % 1 === 0 ? t : String(t).replace('.',',')) + " %" + (t === 10 ? " - Art. 279-0 bis CGI" : (t === 5.5 ? " - Art. 278-0 bis A CGI (rénovation énergétique)" : ""));
+    return "<tr class=\"ttva\" style=\"background:#1F2937\"><td colspan=\"5\">" + label + " (base " + fmtE(htParTaux[t]) + ")</td><td>" + fmtE(mt) + "</td></tr>";
+  }).join("");
   var html = "<div class=\"ddoc\">"
     + "<div class=\"dh\" style=\"background:#24364D;border-bottom:3px solid #C4620A\">"
     + "<div><div class=\"dlogo\" style=\"color:#f4f4f4\">▲  ARTEP — COURTAGE TRAVAUX</div><div style=\"font-size:9px;color:#C4620A;margin-top:3px\">" + tel + "  |  " + email + "</div></div>"
@@ -1363,14 +1378,14 @@ function renderPreview(d) {
     + "<tbody>" + tbody
     + "<tr><td colspan=\"6\" style=\"height:8px\"></td></tr>"
     + "<tr class=\"tht\" style=\"background:#1F2937\"><td colspan=\"5\">TOTAL HT TRAVAUX</td><td>" + (totalHT > 0 ? fmtE(totalHT) : "À compléter") + "</td></tr>"
-    + "<tr class=\"ttva\" style=\"background:#1F2937\"><td colspan=\"5\">TVA 10 % - Art. 279-0 bis CGI</td><td>" + (tva > 0 ? fmtE(tva) : "") + "</td></tr>"
+    + (totalHT > 0 ? tvaRows : "")
     + "<tr class=\"tttc\" style=\"background:#C4620A\"><td colspan=\"5\">TOTAL TTC TRAVAUX</td><td>" + (ttc > 0 ? fmtE(ttc) : "—") + "</td></tr>"
     + "</tbody></table>"
     + "<div class=\"df\">"
     + "<div style=\"font-size:9px;color:#555;margin-bottom:6px\">Engagement délai : " + delai + ". Pénalités de retard selon CGV.</div>"
     + "<div class=\"ptit\">CONDITION DE RÈGLEMENT SUR MESURE NON CONTRACTUELLE</div>"
     + "<div style=\"font-size:9px;color:#444;line-height:1.8\">• Acompte 40 % à la signature du bon de commande<br>• 25 % sur situation en cours de travaux<br>• 30 % sur situation en cours de travaux<br>• Solde 5 % à réception des travaux</div>"
-    + "<div style=\"font-size:8px;color:#777;margin-top:8px;font-style:italic\">Document non contractuel - valable 30 jours. TVA 10% pour travaux rénovation logement achevé depuis + de 2 ans (Art. 279-0 bis CGI).</div>"
+    + "<div style=\"font-size:8px;color:#777;margin-top:8px;font-style:italic\">Document non contractuel - valable 30 jours. TVA 10% (rénovation logement achevé depuis + de 2 ans, Art. 279-0 bis CGI) ou 5,5% (rénovation énergétique, Art. 278-0 bis A CGI) selon la nature des travaux.</div>"
     + "</div>"
     + "<div style=\"padding:14px 20px;background:#F4F4F4;border-top:2px solid #24364D\">"
     + "<div style=\"font-size:11px;font-weight:800;color:#24364D;text-transform:uppercase;margin-bottom:2px\">✓ Assistance Essentielle (Incluse)</div>"
@@ -1610,6 +1625,7 @@ async function exportExcel() {
 
   // ── LOTS ─────────────────────────────────────────────
   var stCells = [];
+  var exportFirstRow = rn;   // début de la zone lignes (pour SUMIF TVA)
 
   d.lots.forEach(function(lot) {
     // Titre LOT — ORANGE
@@ -1653,6 +1669,10 @@ async function exportExcel() {
       ws.getCell("F"+rn).value = {formula:"IF($G"+rn+"=1,0,D"+rn+"*E"+rn+")"};
       sc(ws.getCell("F"+rn), fn(false,9,C2), sf(CW), al("right","top"), bH(), "#,##0.00 \"€\"");
 
+      // Colonne H (masquée) = taux de TVA de la ligne, uniquement pour les lignes non-option.
+      // Sert au calcul de la TVA par taux (SUMIF). Les sous-totaux n'ont pas de H → non comptés.
+      if (!isOption) ws.getCell("H"+rn).value = (typeof l.tva === 'number') ? l.tva : (parseFloat(l.tva) || 10);
+
       rn++;
     });
 
@@ -1670,28 +1690,63 @@ async function exportExcel() {
     rn++;
   });
 
-  // Colonne G masquée (marqueurs option, sert uniquement au calcul)
+  // Colonnes G et H masquées (marqueurs de calcul)
   ws.getColumn("G").hidden = true;
+  ws.getColumn("H").hidden = true;
+
+  var exportLastRow = rn - 1;   // fin de la zone lignes (inclut sous-totaux, sans H → ignorés par SUMIF)
+  var Hr = "H"+exportFirstRow+":H"+exportLastRow;
+  var Fr = "F"+exportFirstRow+":F"+exportLastRow;
 
   // ── Vue NORMALE — supprime le gel et le chevauchement des pages au scroll ──
   ws.views = [{state:"normal", zoomScale:90, showGridLines:true}];
 
-  // ── TOTAUX ───────────────────────────────────────────
+  // ── TOTAUX (TVA multi-taux) ──────────────────────────
   rn++;
-  var rowHT = rn, rowTVA = rn+1, rowTTC = rn+2;
-  [
-    [rowHT,  "TOTAL HT TRAVAUX",                "SUM("+stCells.join(",")+")", CD, 9,  false],
-    [rowTVA, "TVA 10 % - Art. 279-0 bis CGI",   "F"+rowHT+"*0.10",           CD, 9,  false],
-    [rowTTC, "TOTAL TTC TRAVAUX",                "F"+rowHT+"+F"+rowTVA,       CO, 10, true ]
-  ].forEach(function(t) {
-    var r=t[0], lbl=t[1], fml=t[2], bg=t[3], sz=t[4], ttc=t[5];
-    ws.mergeCells("A"+r+":E"+r);
-    ws.getCell("A"+r).value = lbl;
-    sc(ws.getCell("A"+r), fn(true,sz,CW), sf(bg), al("right"));
-    ws.getCell("F"+r).value = {formula:fml};
-    sc(ws.getCell("F"+r), fn(true, Math.min(12, ttc?sz+2:sz), CW), sf(bg), al("right"), null, "#,##0.00 \"€\"");
-    ws.getRow(r).height = ttc ? 26 : 18;
+  // Taux de TVA réellement présents dans l'étude
+  var tauxPresents = {};
+  d.lots.forEach(function(lot){ (lot.lignes||[]).forEach(function(l){
+    if (!l.option && l.quantite && l.pu_ht) {
+      var t = (typeof l.tva === 'number') ? l.tva : (parseFloat(l.tva) || 10);
+      tauxPresents[t] = true;
+    }
+  }); });
+  var tauxList = Object.keys(tauxPresents).map(parseFloat).sort(function(a,b){return a-b;});
+  if (!tauxList.length) tauxList = [10];
+
+  var rowHT = rn;
+  // Ligne TOTAL HT
+  ws.mergeCells("A"+rn+":E"+rn);
+  ws.getCell("A"+rn).value = "TOTAL HT TRAVAUX";
+  sc(ws.getCell("A"+rn), fn(true,9,CW), sf(CD), al("right"));
+  ws.getCell("F"+rn).value = {formula:"SUM("+stCells.join(",")+")"};
+  sc(ws.getCell("F"+rn), fn(true,9,CW), sf(CD), al("right"), null, "#,##0.00 \"€\"");
+  ws.getRow(rn).height = 18;
+  rn++;
+
+  // Une ligne TVA par taux présent
+  var tvaCells = [];
+  tauxList.forEach(function(t){
+    var lbl = "TVA " + (t % 1 === 0 ? t : String(t).replace('.',',')) + " %" + (t === 10 ? " - Art. 279-0 bis CGI" : (t === 5.5 ? " - Art. 278-0 bis A CGI" : ""));
+    ws.mergeCells("A"+rn+":E"+rn);
+    ws.getCell("A"+rn).value = lbl;
+    sc(ws.getCell("A"+rn), fn(true,9,CW), sf(CD), al("right"));
+    ws.getCell("F"+rn).value = {formula:"SUMIF("+Hr+","+t+","+Fr+")*"+(t/100)};
+    sc(ws.getCell("F"+rn), fn(true,9,CW), sf(CD), al("right"), null, "#,##0.00 \"€\"");
+    ws.getRow(rn).height = 18;
+    tvaCells.push("F"+rn);
+    rn++;
   });
+
+  // Ligne TOTAL TTC
+  var rowTTC = rn;
+  ws.mergeCells("A"+rn+":E"+rn);
+  ws.getCell("A"+rn).value = "TOTAL TTC TRAVAUX";
+  sc(ws.getCell("A"+rn), fn(true,11,CW), sf(CO), al("right"));
+  ws.getCell("F"+rn).value = {formula:"F"+rowHT+"+"+tvaCells.join("+")};
+  sc(ws.getCell("F"+rn), fn(true,12,CW), sf(CO), al("right"), null, "#,##0.00 \"€\"");
+  ws.getRow(rn).height = 26;
+  rn++;
   rn = rowTTC + 2;
 
   // ── CONDITIONS PAIEMENT ──────────────────────────────
