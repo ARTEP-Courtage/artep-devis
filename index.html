@@ -1024,13 +1024,13 @@ function generer() {
     + "- CALCUL QUANTITÉ CLOISONS BA13 : quantité en m² = (somme des linéaires développés en m, retours compris) × hauteur en m, sur UNE SEULE FACE (ne jamais multiplier par 2 pour les deux parements). Exemple : cloison 2,40 m + retour 1,00 m sur 2,50 m de haut → (2,40 + 1,00) × 2,50 = 8,5 m². N'écris pas ce calcul dans la description.\n"
     + "- CALCUL QUANTITÉ PEINTURE : UNE SEULE ligne peinture (LOT 6) dont la quantité m² = [murs : périmètre de chaque pièce × hauteur sous plafond, SANS déduire les portes/fenêtres] + [plafonds : surface au sol de chaque pièce], le tout CUMULÉ en une seule quantité globale. N'écris pas le détail du calcul dans la description.\n"
     + "- CALCUL QUANTITÉ CARRELAGE / FAÏENCE : applique +11% sur les surfaces pour chutes/découpes DANS LE CALCUL DE LA QUANTITÉ uniquement (10m² → 11.1). N'écris JAMAIS la mention '+11%', 'chutes/découpes' ni le détail du calcul dans la description visible par le client.\n"
-    + "- CARRELAGE SOL : ajouter \'Four. & pose seuil de porte aluminium anodisé\' ref DIV-004 — 1u par porte (0.70ml)\n"
+    + "- CARRELAGE SOL : ajouter \'Four. & pose seuil de porte aluminium anodisé\' ref DIV-002 — 1u par porte (0.70ml)\n"
     + "- PRIX CARRELAGE PAR DÉFAUT : si la description du chantier ne précise pas de marque, modèle, gamme ou prix pour le carrelage/faïence à poser, NE cherche PAS de correspondance bibliothèque pour la ligne fourniture+pose — fixe toi-même : \"ref\":null, \"nouveau\":false, \"prix_defaut\":true, carrelage SOL = 22.73€ HT/m² (25€ TTC), faïence MUR = 20€ HT/m² (22€ TTC). AUCUNE marque ni modèle pour le carrelage — précise en revanche dans la description la fourchette de format : carrelage SOL 'format entre 25x25 cm et 60x60 cm selon choix client', faïence MUR 'format entre 20x20 cm et 30x60 cm selon choix client'. Si la description précise un modèle/gamme/prix différent, utilise plutôt la référence bibliothèque correspondante si elle existe (et ne mets pas \"prix_defaut\").\n"
-    + "- PLOMBERIE avec douche/receveur/baignoire : LOT 2 → colonne douche thermostatique (ref SAN-009, jamais encastré) + LOT 4 → \'Coffrage BA13 hydrofugé — passage plomberie EF/EC mitigeur\' ref PLA-006\n"
+    + "- PLOMBERIE avec douche/receveur/baignoire : LOT 2 → colonne douche thermostatique (ref SAN-006, jamais encastré) + LOT 4 → \'Coffrage BA13 hydrofugé — passage plomberie EF/EC mitigeur\' ref PLA-004\n"
     + "- TRAPPES DE VISITE : n'inclus JAMAIS de trappe de visite dans les coffrages/habillages BA13 par défaut. Ne l'ajoute (mention 'trappe de visite aimantée comprise' ou ligne dédiée) QUE si la demande du chantier la mentionne explicitement.\n"
     + "- DÉTAILS DE CALCUL / DIMENSIONS : n'écris JAMAIS dans la description les calculs internes de dimensionnement (ex. 'linéaire 240cm x hauteur 250cm', 'L=240 x H=250', 'surface 476x440cm'). La description reste commerciale et technique ; les métrés servent uniquement à calculer la quantité, ils ne regardent pas le client.\n"
     + "- SPOTS / POINTS LUMINEUX ENCASTRÉS : n'ajoute des spots ou points lumineux encastrés QUE s'ils sont explicitement demandés dans la description du chantier. Ne les génère JAMAIS automatiquement au motif qu'un faux-plafond est prévu.\n"
-    + "- VASQUE / LAVABO / MEUBLE VASQUE : LOT 2 → mitigeur vasque Grohe Bau Loop ref SAN-007\n"
+    + "- VASQUE / LAVABO / MEUBLE VASQUE : LOT 2 → mitigeur vasque Grohe Bau Loop ref SAN-005\n"
     + "- INTERDIT : jamais mitigeur thermostatique encastré\n"
     + "- LOT PLOMBERIE — DESCRIPTIONS DÉTAILLÉES OBLIGATOIRES : chaque ligne de plomberie doit préciser le type d'alimentation eau froide/eau chaude (multicouche ou PER) et le diamètre d'évacuation PVC adapté à l'appareil concerné : Ø100 pour WC, Ø40 pour évier/lavabo/vasque, Ø32 pour lave-vaisselle/lave-linge. Ne jamais se contenter d'une formulation générique comme 'travaux de plomberie pour...' sans ces précisions techniques.\n"
     + "- APPAREILLAGE ÉLECTRIQUE (prises, interrupteurs, va-et-vient) : ajouter UNE SEULE ligne récapitulative dans le LOT ÉLECTRICITÉ précisant la marque et la gamme retenues pour l'ensemble de l'appareillage du chantier. Par défaut, sauf marque/gamme explicitement mentionnée dans la description : Schneider Electric, gamme Ovalis, coloris blanc.\n"
@@ -1039,8 +1039,8 @@ function generer() {
     + "- GROS OEUVRE : si mur porteur, IPN, parpaings, dalle béton → créer LOT GROS OEUVRE / MAÇONNERIE inséré AVANT LOT PLOMBERIE\n\n"
     + "- LIGNES EN OPTION : toute prestation proposée en option (doublage thermique, revêtement alternatif, prestation 'sur devis séparé', alternative mutuellement exclusive...) doit porter \"option\":true et commencer sa description par 'OPTION — '. Les lignes option ne sont JAMAIS comptées dans les sous-totaux ni dans le total général (elles sont chiffrées mais affichées hors total). Deux alternatives mutuellement exclusives (ex. carrelage OU parquet sur la même surface) doivent TOUTES porter \"option\":true.\n"
     + "- RELECTURE ANTI-DOUBLON OBLIGATOIRE : avant de produire le JSON, relis l'ensemble des lignes et supprime tout doublon — une même prestation ou un même appareil ne doit apparaître qu'une seule fois. Traite les termes équivalents comme un même appareil (machine à laver = lave-linge = MAL ; lave-vaisselle = LV). RÈGLE STRICTE : si une ligne de réseau global (alimentation/évacuation d'ensemble) mentionne déjà un appareil dans son énumération, tu ne dois créer AUCUNE ligne séparée pour l'alimentation ou l'évacuation de ce même appareil. Exemple concret à ne jamais reproduire : une ligne 'réseau complet pour receveur, vasque, WC, évier ET machine à laver' rend INTERDITE toute ligne distincte 'création alimentation machine à laver'.\n"
-    + "- UNE SEULE ligne 'Approvisionnement + protection chantier + nettoyage' — Forfait ref DIV-002\n"
-    + "- Paris uniquement : ajouter 'Stationnement Paris' ref DIV-007\n"
+    + "- UNE SEULE ligne 'Approvisionnement + protection chantier + nettoyage' — Forfait ref DIV-001\n"
+    + "- Paris uniquement : ajouter 'Stationnement Paris' ref DIV-003\n"
     + "- Ne jamais générer 'livraison matériaux' sauf demande explicite\n\n"
     + "VÉRIFICATION AVANT JSON : ordre lots OK, AUCUN doublon (relis toutes les lignes), une seule protection chantier, quantités carrelage +11% mais SANS mention visible du calcul, aucun détail dimensionnel dans les descriptions, seuils portes, coffrages BA13 SANS trappe sauf demande, pas de spots sauf demande, radiateurs/sèche-serviettes/VMC en lot électricité, lignes option marquées \"option\":true et hors total, peinture avec rebouchage+ponçage+époussetage, plomberie détaillée (alimentation + diamètres), ligne marque appareillage électrique. Puis JSON uniquement.\n\n"
     + "IMPORTANT : même si tu utilises la recherche web pour chiffrer une prestation, ne commente JAMAIS tes recherches dans ta réponse finale. Aucun texte, aucune explication, aucune citation visible avant, pendant ou après le JSON — uniquement le JSON.\n\n"
@@ -1209,6 +1209,39 @@ function generer() {
         });
         if (aAjouter.length) lot.lignes = lot.lignes.concat(aAjouter);
       });
+
+      // ── LIGNE OBLIGATOIRE : Approvisionnement + protection + nettoyage ──
+      // Forcée par le code (indépendamment du modèle) : toujours présente, quelle que soit l'étude.
+      // Recherche robuste par désignation (pas par réf, qui peut changer au réimport de bibliothèque).
+      (function ensureApproLine() {
+        var artAppro = null;
+        for (var i=0;i<library.length;i++) {
+          var d2 = (library[i].des||"").toLowerCase();
+          if (d2.indexOf("approvisionnement")!==-1 && d2.indexOf("protection")!==-1 && d2.indexOf("nettoyage")!==-1) { artAppro = library[i]; break; }
+        }
+        if (!artAppro) return; // l'article n'existe pas dans la bibliothèque
+        // Déjà présente quelque part ?
+        var deja = false;
+        parsed.lots.forEach(function(lot){ (lot.lignes||[]).forEach(function(l){ if (l.ref === artAppro.ref) deja = true; }); });
+        if (deja) return;
+        // Trouver (ou créer) le lot DIVERS / CHANTIER
+        var lotDivers = null;
+        parsed.lots.forEach(function(lot){
+          var u=(lot.intitule||"").toUpperCase();
+          if (u.indexOf("DIVERS")!==-1 || u.indexOf("CHANTIER")!==-1) lotDivers = lot;
+        });
+        if (!lotDivers) { lotDivers = { nom:"LOT", intitule:"DIVERS / CHANTIER", lignes:[] }; parsed.lots.push(lotDivers); }
+        if (!lotDivers.lignes) lotDivers.lignes = [];
+        var retVal = (typeof artAppro.ret==='number' && artAppro.ret>0) ? artAppro.ret : null;
+        var minVal = (typeof artAppro.min==='number' && artAppro.min>0) ? artAppro.min : null;
+        lotDivers.lignes.push({
+          numero:"", description:artAppro.des, unite:artAppro.unit||"Forfait",
+          quantite:1, pu_ht: discountMode ? (minVal!==null?minVal:retVal) : retVal,
+          ref:artAppro.ref, nouveau:false, prix_defaut:false, option:false,
+          tva: (typeof artAppro.tva==='number') ? artAppro.tva : (parseFloat(artAppro.tva)||10),
+          _obligatoire:true
+        });
+      })();
 
       // Tri des lots dans l'ordre ARTEP
       function lotPriority(intitule) {
