@@ -399,7 +399,11 @@ tr.tttc td:last-child{text-align:right;font-size:14px;}
         Associer automatiquement cette prestation à d'autres
       </label>
       <div style="font-size:10px;color:#888;margin-top:2px">Quand cette prestation est utilisée dans une étude, les prestations cochées ci-dessous seront ajoutées automatiquement (quantité 1, même lot).</div>
-      <div id="lb-assoc-box" style="display:none;margin-top:8px;max-height:180px;overflow-y:auto;border:1px solid var(--li);border-radius:6px;padding:8px;background:#faf8f5"></div>
+      <div id="lb-assoc-wrap" style="display:none;margin-top:8px">
+        <input type="text" id="lb-assoc-search" placeholder="🔍 Rechercher une prestation à associer (ex. échafaudage)…" oninput="filterAssocList()" style="width:100%;padding:7px 10px;border:1px solid var(--li);border-radius:6px;font-size:12px;margin-bottom:6px">
+        <div id="lb-assoc-count" style="font-size:10px;color:#2f6b3f;font-weight:700;margin-bottom:4px"></div>
+        <div id="lb-assoc-box" style="max-height:200px;overflow-y:auto;border:1px solid var(--li);border-radius:6px;padding:8px;background:#faf8f5"></div>
+      </div>
     </div>
     <div class="mact">
       <button class="btn btn-g" onclick="closeModal()">Annuler</button>
@@ -1905,27 +1909,56 @@ function openModal(item) {
   // Associations automatiques
   var assoc = (item && Array.isArray(item.assoc)) ? item.assoc : [];
   document.getElementById("lb-assoc-on").checked = assoc.length > 0;
-  buildAssocList(item ? item.id : null, assoc);
-  document.getElementById("lb-assoc-box").style.display = assoc.length > 0 ? "block" : "none";
+  assocSelfId = item ? item.id : null;
+  assocSelected = assoc.slice();                 // réfs cochées, conservées même en filtrant
+  document.getElementById("lb-assoc-search").value = "";
+  buildAssocList("");
+  document.getElementById("lb-assoc-wrap").style.display = assoc.length > 0 ? "block" : "none";
   document.getElementById("modal-art").classList.add("open");
 }
+var assocSelfId = null;
+var assocSelected = [];     // mémorise les réfs cochées indépendamment du filtre d'affichage
 function toggleAssocList() {
   var on = document.getElementById("lb-assoc-on").checked;
-  document.getElementById("lb-assoc-box").style.display = on ? "block" : "none";
+  document.getElementById("lb-assoc-wrap").style.display = on ? "block" : "none";
+  if (on) { document.getElementById("lb-assoc-search").value = ""; buildAssocList(""); }
 }
-function buildAssocList(selfId, selected) {
+// Avant de reconstruire la liste (filtre), on mémorise ce qui est coché à l'écran
+function captureAssocChecks() {
+  var chks = document.querySelectorAll("#lb-assoc-box .assoc-chk");
+  for (var i=0;i<chks.length;i++) {
+    var r = chks[i].value;
+    var pos = assocSelected.indexOf(r);
+    if (chks[i].checked && pos===-1) assocSelected.push(r);
+    else if (!chks[i].checked && pos!==-1) assocSelected.splice(pos,1);
+  }
+}
+function filterAssocList() {
+  captureAssocChecks();
+  buildAssocList(document.getElementById("lb-assoc-search").value || "");
+}
+function buildAssocList(filtre) {
   var box = document.getElementById("lb-assoc-box");
-  selected = selected || [];
-  // liste triée par catégorie, en excluant l'article lui-même
-  var items = library.filter(function(a){ return a.id !== selfId; })
-    .sort(function(a,b){ return (a.cat||"").localeCompare(b.cat||"") || (a.des||"").localeCompare(b.des||""); });
+  var f = (filtre||"").toLowerCase().trim();
+  var items = library.filter(function(a){ return a.id !== assocSelfId; });
+  if (f) items = items.filter(function(a){
+    return (a.des||"").toLowerCase().indexOf(f)!==-1 || (a.ref||"").toLowerCase().indexOf(f)!==-1 || (a.cat||"").toLowerCase().indexOf(f)!==-1;
+  });
+  items.sort(function(a,b){ return (a.cat||"").localeCompare(b.cat||"") || (a.des||"").localeCompare(b.des||""); });
   box.innerHTML = items.map(function(a){
-    var chk = selected.indexOf(a.ref) !== -1 ? "checked" : "";
+    var chk = assocSelected.indexOf(a.ref) !== -1 ? "checked" : "";
     return "<label style='display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11px;cursor:pointer'>"
-      + "<input type='checkbox' class='assoc-chk' value='"+a.ref+"' "+chk+" style='cursor:pointer'>"
+      + "<input type='checkbox' class='assoc-chk' value='"+a.ref+"' "+chk+" onchange='captureAssocChecks();updateAssocCount()' style='cursor:pointer'>"
       + "<span style='color:#888;font-size:9px;min-width:62px'>"+(a.ref||"")+"</span>"
       + "<span>"+(a.des||"")+"</span></label>";
-  }).join("") || "<div style='font-size:11px;color:#888'>Aucune autre prestation dans la bibliothèque.</div>";
+  }).join("") || "<div style='font-size:11px;color:#888'>"+(f?"Aucune prestation ne correspond à « "+filtre+" ».":"Aucune autre prestation dans la bibliothèque.")+"</div>";
+  updateAssocCount();
+}
+function updateAssocCount() {
+  var el = document.getElementById("lb-assoc-count");
+  if (!el) return;
+  var n = assocSelected.length;
+  el.textContent = n ? ("✓ "+n+" prestation(s) associée(s) sélectionnée(s)") : "";
 }
 function editArt(id) { openModal(library.filter(function(a){return a.id===id;})[0]); }
 function closeModal() { document.getElementById("modal-art").classList.remove("open"); }
@@ -2014,8 +2047,8 @@ function saveArt() {
   var ref = document.getElementById("lb-ref").value.trim() || genRef(cat);
   var assoc = [];
   if (document.getElementById("lb-assoc-on").checked) {
-    var chks = document.querySelectorAll("#lb-assoc-box .assoc-chk:checked");
-    for (var k = 0; k < chks.length; k++) assoc.push(chks[k].value);
+    captureAssocChecks();          // intègre les cases cochées actuellement affichées
+    assoc = assocSelected.slice();  // liste complète, indépendante du filtre de recherche
   }
   var item = {
     id: id, ref: ref, cat: cat, des: des,
